@@ -1,0 +1,102 @@
+--- libsylph/procmsg.c.orig	2007-01-16 07:00:10.000000000 +0100
++++ libsylph/procmsg.c	2007-08-27 22:48:47.000000000 +0200
+@@ -24,6 +24,9 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <errno.h>
++#include <string.h>
++#include <fcntl.h>
++#include <unistd.h>
+ 
+ #include "utils.h"
+ #include "procmsg.h"
+@@ -796,6 +799,20 @@
+ 	fclose(fp);
+ }
+ 
++/* play nice with other applications who'd like to read our data files */
++static void procmsg_lock_data_file(int fd)
++{
++	struct flock lock;
++
++	memset(&lock, 0, sizeof(lock));
++	lock.l_start = 0;		/* from l_whence */
++	lock.l_len = 0;			/* to end of file */
++	lock.l_type = F_WRLCK;		/* write lock */
++	lock.l_whence = SEEK_CUR;	/* from current position */
++
++	fcntl(fd, F_SETLKW, &lock);
++}
++
+ FILE *procmsg_open_data_file(const gchar *file, guint version,
+ 			     DataOpenMode mode, gchar *buf, size_t buf_size)
+ {
+@@ -805,21 +822,38 @@
+ 	g_return_val_if_fail(file != NULL, NULL);
+ 
+ 	if (mode == DATA_WRITE) {
+-		if ((fp = g_fopen(file, "wb")) == NULL) {
++		int fd;
++
++		if ((fd = g_open(file, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR)) < 0) {
+ 			if (errno == EACCES) {
+ 				change_file_mode_rw(NULL, file);
+-				if ((fp = g_fopen(file, "wb")) == NULL) {
+-					FILE_OP_ERROR(file, "fopen");
++				if ((fd = g_open(file, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR)) < 0) {
++					FILE_OP_ERROR(file, "open");
+ 					return NULL;
+ 				}
+ 			} else {
+-				FILE_OP_ERROR(file, "fopen");
++				FILE_OP_ERROR(file, "open");
+ 				return NULL;
+ 			}
+ 		}
++
++		procmsg_lock_data_file(fd);
++
++		if ((fp = fdopen(fd, "wb")) == NULL) {
++			close(fd);
++			FILE_OP_ERROR(file, "fdopen");
++ 			return NULL;
++ 		}
++
+ 		if (change_file_mode_rw(fp, file) < 0)
+ 			FILE_OP_ERROR(file, "chmod");
+ 
++		if (ftruncate(fd, 0) < 0) {
++			close(fd);
++			FILE_OP_ERROR(file, "ftruncate");
++			return NULL;
++		}
++
+ 		WRITE_CACHE_DATA_INT(version, fp);
+ 		return fp;
+ 	}
+@@ -859,11 +893,14 @@
+ 				change_file_mode_rw(NULL, file);
+ 				if ((fp = g_fopen(file, "ab")) == NULL) {
+ 					FILE_OP_ERROR(file, "fopen");
++					return NULL;
+ 				}
+ 			} else {
+ 				FILE_OP_ERROR(file, "fopen");
++				return NULL;
+ 			}
+ 		}
++		procmsg_lock_data_file(fileno(fp));
+ 	} else {
+ 		/* open with overwrite mode if mark file doesn't exist or
+ 		   version is different */
+--- src/main.c.orig	2007-01-12 07:14:58.000000000 +0100
++++ src/main.c	2007-08-27 22:50:44.000000000 +0200
+@@ -368,7 +368,7 @@
+ 		} else if (!strncmp(argv[i], "--send", 6)) {
+ 			cmd.send = TRUE;
+ 		} else if (!strncmp(argv[i], "--version", 9)) {
+-			puts("Sylpheed version " VERSION);
++			puts("Sylpheed version " VERSION "+locking");
+ 			exit(0);
+ 		} else if (!strncmp(argv[i], "--status-full", 13)) {
+ 			const gchar *p = argv[i + 1];

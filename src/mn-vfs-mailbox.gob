@@ -1,0 +1,487 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include <libgnomevfs/gnome-vfs.h>
+#include "mn-reentrant-mailbox.h"
+%}
+
+%h{
+#define MN_VFS_MAILBOX_MAX_BACKEND_TYPES	5
+extern GType mn_vfs_mailbox_backend_types[MN_VFS_MAILBOX_MAX_BACKEND_TYPES + 1];
+%}
+
+%privateheader{
+#include "mn-vfs-mailbox-backend.h"
+%}
+
+%{
+#include <glib/gi18n.h>
+#include "mn-mailbox-private.h"
+#include "mn-reentrant-mailbox-private.h"
+#if WITH_MBOX
+#include "mn-mbox-mailbox-backend.h"
+#endif
+#if WITH_MOZILLA
+#include "mn-mozilla-mailbox-backend.h"
+#endif
+#if WITH_MH
+#include "mn-mh-mailbox-backend.h"
+#endif
+#if WITH_MAILDIR
+#include "mn-maildir-mailbox-backend.h"
+#endif
+#if WITH_SYLPHEED
+#include "mn-sylpheed-mailbox-backend.h"
+#endif
+#include "mn-vfs-mailbox-backend-private.h"
+#include "mn-vfs.h"
+#include "mn-stock.h"
+#include "mn-conf.h"
+#include "mn-util.h"
+#include "mn-locked-callback.h"
+
+GType mn_vfs_mailbox_backend_types[MN_VFS_MAILBOX_MAX_BACKEND_TYPES + 1];
+
+typedef struct
+{
+  char				*uri;
+  MNVFSMailboxBackend		*owner;
+  GnomeVFSMonitorType		type;
+  GnomeVFSMonitorCallback	callback;
+  gpointer			user_data;
+
+  GnomeVFSResult		result;
+  GnomeVFSMonitorHandle		*handle;
+} Monitor;
+%}
+
+class MN:VFS:Mailbox from MN:Reentrant:Mailbox (abstract)
+{
+  public char *uri destroywith g_free;
+  public GnomeVFSURI *vfs_uri unrefwith gnome_vfs_uri_unref;
+
+  private GSList *monitors;
+  private MNVFSMailboxBackend *backend unrefwith g_object_unref;
+  private unsigned int update_poll_id;
+
+  private GMutex *mutex = {g_mutex_new()} destroywith g_mutex_free;
+
+  public void
+    init_types (void)
+  {
+    int i = 0;
+
+#if WITH_MBOX
+    mn_vfs_mailbox_backend_types[i++] = MN_TYPE_MBOX_MAILBOX_BACKEND;
+#endif
+#if WITH_MOZILLA
+    mn_vfs_mailbox_backend_types[i++] = MN_TYPE_MOZILLA_MAILBOX_BACKEND;
+#endif
+    /*
+     * Claws Mail mailboxes contain both a .sylpheed_mark and a
+     * .mh_sequences file. List the Sylpheed backend first, in order
+     * to treat them as Sylpheed mailboxes. This way, the need to use
+     * rcvstore from procmail is removed.
+     */
+#if WITH_SYLPHEED
+    mn_vfs_mailbox_backend_types[i++] = MN_TYPE_SYLPHEED_MAILBOX_BACKEND;
+#endif
+#if WITH_MH
+    mn_vfs_mailbox_backend_types[i++] = MN_TYPE_MH_MAILBOX_BACKEND;
+#endif
+#if WITH_MAILDIR
+    mn_vfs_mailbox_backend_types[i++] = MN_TYPE_MAILDIR_MAILBOX_BACKEND;
+#endif
+    mn_vfs_mailbox_backend_types[i] = 0;
+  }
+
+  class_init (class)
+  {
+    /*
+     * Most VFS mailboxes will probably be local files, or remote
+     * files located in the same LAN. We therefore choose a small
+     * default check delay (1 minute).
+     */
+    MN_MAILBOX_CLASS(class)->default_check_delay = 60 * 1;
+  }
+
+  constructor (self)
+  {
+    /* set default poll to the most likely value */
+    mn_mailbox_set_poll(MN_MAILBOX(self), FALSE);
+  }
+
+  dispose (self)
+  {
+    /*
+     * We are no longer operational after dispose (see unrefwith
+     * above), so we must remove our monitors.
+     */
+    mn_source_clear(&selfp->update_poll_id);
+    mn_g_slist_clear_deep_custom(&selfp->monitors, (GFunc) self_monitor_free, NULL);
+  }
+
+  override (MN:Mailbox) void
+    seal (MNMailbox *mailbox)
+  {
+    Self *self = SELF(mailbox);
+
+    PARENT_HANDLER(mailbox);
+
+    if (self->uri)
+      {
+	self->vfs_uri = gnome_vfs_uri_new(self->uri);
+
+	if (! mailbox->stock_id && self->vfs_uri && ! gnome_vfs_uri_is_local(self->vfs_uri))
+	  mn_mailbox_set_stock_id(mailbox, MN_STOCK_REMOTE);
+
+	if (! mailbox->runtime_name)
+	  {
+	    char *path;
+
+	    path = gnome_vfs_get_local_path_from_uri(self->uri);
+	    if (path)
+	      {
+		mailbox->runtime_name = g_filename_display_name(path);
+		g_free(path);
+	      }
+	    else
+	      mailbox->runtime_name = self->vfs_uri
+		? gnome_vfs_uri_to_string(self->vfs_uri, GNOME_VFS_URI_HIDE_PASSWORD)
+		: g_strdup(self->uri);
+	  }
+      }
+
+    if (! mailbox->stock_id)
+      mn_mailbox_set_stock_id(mailbox, MN_STOCK_LOCAL);
+  }
+
+  private Monitor *
+    find_monitor (self,
+		  const char *uri (check null),
+		  MNVFSMailboxBackend *owner,
+		  GnomeVFSMonitorType type,
+		  GnomeVFSMonitorCallback callback,
+		  gpointer user_data)
+  {
+    GSList *l;
+
+    MN_LIST_FOREACH(l, selfp->monitors)
+      {
+	Monitor *monitor = l->data;
+
+	if (monitor->owner == owner
+	    && monitor->type == type
+	    && monitor->callback == callback
+	    && monitor->user_data == user_data
+	    && ! strcmp(monitor->uri, uri))
+	  return monitor;
+      }
+
+    return NULL;
+  }
+
+  protected void
+    monitor (self,
+	     const char *uri (check null),
+	     MNVFSMailboxBackend *owner,
+	     GnomeVFSMonitorType type,
+	     GnomeVFSMonitorCallback callback,
+	     gpointer user_data)
+  {
+    Monitor *monitor;
+
+    g_return_if_fail(owner == NULL || MN_IS_VFS_MAILBOX_BACKEND(owner));
+
+    monitor = self_find_monitor(self, uri, owner, type, callback, user_data);
+    if (! monitor)
+      {
+	monitor = g_new0(Monitor, 1);
+	monitor->uri = g_strdup(uri);
+	monitor->owner = owner;
+	monitor->type = type;
+	monitor->callback = callback;
+	monitor->user_data = user_data;
+	monitor->result = -1;
+
+	selfp->monitors = g_slist_append(selfp->monitors, monitor);
+      }
+
+    if (monitor->result != GNOME_VFS_OK)
+      {
+	GnomeVFSResult result;
+
+	result = mn_gnome_vfs_monitor_add_locked(&monitor->handle, uri, type, callback, user_data);
+	if (result != monitor->result)
+	  {
+	    monitor->result = result;
+	    if (result != GNOME_VFS_OK)
+	      mn_mailbox_warning(MN_MAILBOX(self), _("unable to monitor %s (%s), poll mode activated"), uri, gnome_vfs_result_to_string(result));
+
+	    self_queue_update_poll(self);
+	  }
+      }
+  }
+
+  private void
+    monitor_free (Monitor *monitor (check null))
+  {
+    g_free(monitor->uri);
+
+    if (monitor->result == GNOME_VFS_OK)
+      mn_gnome_vfs_monitor_cancel_locked(monitor->handle);
+
+    g_free(monitor);
+  }
+
+  private void
+    monitor_cb (GnomeVFSMonitorHandle *handle,
+		const char *monitor_uri,
+		const char *info_uri,
+		GnomeVFSMonitorEventType event_type,
+		gpointer user_data)
+  {
+    if (event_type == GNOME_VFS_MONITOR_EVENT_CHANGED
+	|| event_type == GNOME_VFS_MONITOR_EVENT_DELETED
+	|| event_type == GNOME_VFS_MONITOR_EVENT_CREATED)
+      {
+	Self *self = user_data;
+	MNVFSMailboxBackend *backend;
+
+	/*
+	 * Queue a check to detect if the mailbox type has changed. If
+	 * the mailbox has a backend, we must use
+	 * mn_vfs_mailbox_backend_queue_check() (which respects the
+	 * check_latency member of MNVFSMailboxBackend) in order to
+	 * avoid race conditions.
+	 */
+
+	self_lock(self);
+
+	backend = selfp->backend;
+	if (backend)
+	  mn_vfs_mailbox_backend_queue_check(backend);
+
+	self_unlock(self);
+
+	/*
+	 * Note that at this point, we have released the lock and the
+	 * backend might have been finalized by another thread: we can
+	 * only test the nullity of the pointer.
+	 */
+	if (! backend)
+	  mn_reentrant_mailbox_queue_check(MN_REENTRANT_MAILBOX(self));
+      }
+  }
+
+  protected void
+    remove_monitors_by_owner (self, MNVFSMailboxBackend *owner)
+  {
+    GSList *l;
+
+    g_return_if_fail(owner == NULL || MN_IS_VFS_MAILBOX_BACKEND(owner));
+
+  start:
+    MN_LIST_FOREACH(l, selfp->monitors)
+      {
+	Monitor *monitor = l->data;
+
+	if (monitor->owner == owner)
+	  {
+	    selfp->monitors = mn_g_slist_delete_link_deep_custom(selfp->monitors, l, (GFunc) self_monitor_free, NULL);
+	    self_queue_update_poll(self);
+	    goto start;
+	  }
+      }
+  }
+
+  private void
+    queue_update_poll (self)
+  {
+    if (! selfp->update_poll_id)
+      selfp->update_poll_id = gdk_threads_add_idle(self_update_poll_cb, self);
+  }
+
+  private gboolean
+    update_poll_cb (gpointer data)
+  {
+    Self *self = data;
+    gboolean polled = FALSE;
+    GSList *l;
+
+    self_lock(self);
+
+    MN_LIST_FOREACH(l, selfp->monitors)
+      {
+	Monitor *monitor = l->data;
+
+	if (monitor->result != GNOME_VFS_OK)
+	  {
+	    polled = TRUE;
+	    break;
+	  }
+      }
+
+    selfp->update_poll_id = 0;
+
+    self_unlock(self);
+
+    if (mn_mailbox_get_poll(MN_MAILBOX(self)) != polled)
+      mn_mailbox_set_poll(MN_MAILBOX(self), polled);
+
+    return FALSE;		/* remove source */
+  }
+
+  override (MN:Reentrant:Mailbox) void
+    reentrant_check (MNReentrantMailbox *mailbox, int check_id)
+  {
+    Self *self = SELF(mailbox);
+    MNVFSMailboxBackend *backend;
+    MNVFSMailboxBackendClass *class;
+    GType backend_type = 0;
+    gboolean exists;
+
+    self_lock(self);
+
+    /*
+     * Install the monitors that detect a mailbox type change. These
+     * monitors are not meant to detect if the mail status of a
+     * mailbox changes (it is the responsability of the backend),
+     * although they will do so with some mailbox formats.
+     *
+     * For properly detecting the new mailbox type when the file or
+     * directory changes we need install both a file and a directory
+     * monitor, since depending on the underlying implementation we
+     * might not get file events if the URI is a directory, etc.
+     */
+    self_monitor(self, self->uri, NULL, GNOME_VFS_MONITOR_FILE, self_monitor_cb, self);
+    self_monitor(self, self->uri, NULL, GNOME_VFS_MONITOR_DIRECTORY, self_monitor_cb, self);
+
+    backend = selfp->backend;
+    if (backend)
+      g_object_ref(backend);
+
+    self_unlock(self);
+
+    class = backend ? MN_VFS_MAILBOX_BACKEND_GET_CLASS(backend) : NULL;
+    if (class && class->is(NULL, class, self))
+      backend_type = G_OBJECT_TYPE(backend);
+    else
+      {
+	exists = mn_vfs_test(self->vfs_uri, G_FILE_TEST_EXISTS);
+	if (exists)
+	  {
+	    int i;
+
+	    for (i = 0; mn_vfs_mailbox_backend_types[i]; i++)
+	      {
+		class = g_type_class_peek(mn_vfs_mailbox_backend_types[i]);
+		g_assert(class != NULL);
+
+		if (class->is(NULL, class, self))
+		  {
+		    backend_type = mn_vfs_mailbox_backend_types[i];
+		    break;
+		  }
+
+		if (mn_reentrant_mailbox_check_aborted(mailbox, check_id))
+		  goto end;
+	      }
+	  }
+      }
+
+    if (! backend || backend_type != G_OBJECT_TYPE(backend))
+      {
+	MNVFSMailboxBackend *new_backend = NULL;
+
+	if (! mn_reentrant_mailbox_check_aborted(mailbox, check_id))
+	  {
+	    GDK_THREADS_ENTER();
+
+	    if (backend_type)
+	      {
+		new_backend = g_object_new(backend_type, MN_VFS_MAILBOX_BACKEND_PROP_MAILBOX(self), NULL);
+		mn_mailbox_set_format(MN_MAILBOX(self), (char *) MN_VFS_MAILBOX_BACKEND_GET_CLASS(new_backend)->format);
+	      }
+	    else
+	      {
+		mn_mailbox_set_format(MN_MAILBOX(self), NULL);
+		mn_mailbox_set_error(MN_MAILBOX(self), exists ? _("unknown mailbox format") : _("does not exist"));
+	      }
+
+	    gdk_flush();
+	    GDK_THREADS_LEAVE();
+	  }
+
+	self_lock(self);
+
+	if (backend)
+	  {
+	    g_object_unref(backend);
+	    backend = NULL;
+	  }
+
+	if (! mn_reentrant_mailbox_check_aborted(mailbox, check_id))
+	  {
+	    if (selfp->backend)
+	      {
+		g_object_unref(selfp->backend);
+		selfp->backend = NULL;
+	      }
+
+	    if (new_backend)
+	      {
+		selfp->backend = backend = new_backend;
+		new_backend = NULL;
+
+		g_object_ref(backend);
+	      }
+	  }
+
+	self_unlock(self);
+
+	if (new_backend)
+	  g_object_unref(new_backend);
+      }
+
+    if (backend)
+      mn_vfs_mailbox_backend_check(backend, check_id);
+
+  end:
+    if (backend)
+      {
+	self_lock(self);
+	g_object_unref(backend);
+	self_unlock(self);
+      }
+  }
+
+  public void
+    lock (self)
+  {
+    g_mutex_lock(selfp->mutex);
+  }
+
+  public void
+    unlock (self)
+  {
+    g_mutex_unlock(selfp->mutex);
+  }
+}

@@ -1,0 +1,958 @@
+5.4					May 22, 2008
+
+	* Core changes:
+		* Messages that the user has considered as read are
+		  now remembered across sessions (#229167)
+
+	* IMAP changes:
+		* A regression introduced in 5.1 caused some read
+		  messages to be reported as unread: fixed (#230425)
+
+	* Updated translations:
+		* French
+		* Polish (Tomasz Sałaciński)
+
+5.3					April 27, 2008
+
+	* Core changes:
+		* Compile options are now passed to the C compiler in
+		  the appropriate order, fixing the build with options
+		  such as -Wl,--as-needed (#214450)
+		* The "connection to the D-Bus session was lost" error
+		  dialog is no longer displayed on logout
+		* The .desktop files have been improved (#204466)
+
+	* IMAP, Maildir and POP3 changes:
+		* The message caching code introduced in 5.1 sometimes
+		  caused a crash: fixed (#210915)
+
+	* Evolution changes:
+		* A regression introduced in 5.1 caused a crash on
+		  64-bit systems: fixed (#208149)
+
+	* Windows Live Hotmail changes:
+		* Spanish inbox support has been fixed (#214986)
+
+	* Updated translations:
+		* Spanish (Nacho Hermoso de Mendoza)
+
+5.2					March 20, 2008
+
+	* Core changes:
+		* GConf default values were no longer registered:
+		  fixed
+		* The GConf sanity check code (which caused MN to
+		  refuse to run if some GConf default values are
+		  missing) was no longer compiled in: fixed
+
+5.1					March 20, 2008
+
+	* Core changes:
+		* The message count of the status icon was sometimes
+		  not properly redrawn: fixed (#185999)
+		* Time settings are now entered using sliders; these
+		  sliders are non-linear and allow to easily choose an
+		  appropriate value without having to use the keyboard
+		* The "mailbox name" and "delay between mail checks"
+		  mailbox settings have been moved to a separate tab,
+		  and are no longer modified as a side effect of
+		  modifying other settings (it could be confusing)
+		* The cancel button of the mailbox properties dialog
+		  now works in a standard way: if the apply button was
+		  used, these changes are undone
+		* The number of messages of the tooltip mail summary
+		  is now limited, via the
+		  /apps/mail-notification/popups/limit GConf key
+		  (#184487)
+		* The transparency issue of the tooltip mail summary
+		  (https://savannah.nongnu.org/bugs/?19104) was still
+		  present: fixed
+		* The interprocess communication code now uses D-Bus
+		  rather than Bonobo. This move was made because
+		  Bonobo suffers from a number of bugs and
+		  limitations, and is deprecated.
+		* libeel is no longer used since its API is not stable
+		  (#180400)
+		* The build system has been changed from the GNU
+		  Autotools to JB (the Jean-Yves Lefort's Build
+		  System)
+
+	* IMAP, Maildir, mbox, MH, Mozilla, POP3, Sylpheed, Windows
+	  Live Hotmail and Yahoo! Mail changes:
+		* The GConf setting
+		  /apps/mail-notification/fallback-charsets has been
+		  added. This setting is used when attempting to
+		  convert invalidly encoded message headers to
+		  UTF-8. Previously, the hardcoded fallback encoding
+		  was ISO8859-1, but changes in GMime 2.2.7 broke the
+		  fallback code.
+
+	* IMAP, Maildir and POP3 changes:
+		* Bandwidth usage has been reduced (message headers
+		  are now cached)
+
+	* IMAP and POP3 changes:
+		* SSL/TLS error messages are now more detailed
+
+	* Sylpheed and Maildir changes:
+		* Message popup actions are now executed in a separate
+		  thread, to avoid blocking the user interface
+
+	* Maildir changes:
+		* The "delete message" dialog (which is displayed when
+		  a message cannot be moved to the trash) could
+		  disappear if the mailbox changed: fixed
+
+	* MH changes:
+		* xmh mailboxes containing no new mail are now
+		  properly detected as MH mailboxes (#196929, patch by
+		  Peter Kjellerstedt)
+
+	* Windows Live Hotmail changes:
+		* Account languages other than English are now
+		  supported. Support was added for Brazilian
+		  Portuguese, Danish, Dutch, Finnish, French, German,
+		  Italian, Norwegian, Polish, Portuguese, Spanish,
+		  Swedish (#185993).
+		* Folder names containing non-ASCII characters are now
+		  handled properly
+
+	* Yahoo! Mail changes:
+		* Folder names containing ISO8859-1 characters in the
+		  range 128-255 are now handled properly
+
+	* Evolution changes:
+		* When Evolution is not running, it is now monitored
+		  passively rather than checked every second. This
+		  change was made possible by the switch from Bonobo
+		  to D-Bus.
+		* The "delay between mail checks" option is no longer
+		  used (previously, it was only used when the
+		  Evolution folder was not found, but not even that is
+		  necessary)
+
+	* Updated translations:
+		* French
+		* Serbian (Filip Miletic)
+		* Spanish (Nacho Hermoso de Mendoza)
+		* Swedish (Daniel Nylander)
+
+5.0					January 4, 2008
+
+	* Core changes:
+		* The tooltip mail summary now respects the GTK+ theme
+		  colors (#177067)
+		* The "Sent:" fields of the tooltip are now updated
+		  only once per second, when the second changes
+		  (previously, they were updated twice per second at
+		  no precise point in time, so they could lag behind
+		  the clock for as much as half a second)
+
+	* IMAP and POP3 changes:
+		* The build no longer fails when SSL/TLS is disabled
+
+	* Updated translations:
+		* Serbian (Filip Miletic)
+		* Swedish (Daniel Nylander)
+
+	* New translations:
+		* Spanish (Nacho Hermoso de Mendoza)
+
+---
+ Note: below, bug numbers refer to the old bug tracker
+ (https://savannah.nongnu.org/bugs/?group=mailnotify).
+---
+
+5.0 Release Candidate 1			November 27, 2007
+
+	* Core changes:
+		* A "Play a sound when new mail arrives" option has
+		  been added
+		* Yahoo! Mail support has been added (requires
+		  fetchyahoo)
+		* Windows Live Hotmail support has been added
+		  (requires GetLive)
+		* A "consider new mail as read" action has been added
+		  (#18241)
+		* An optional message count has been added over the
+		  icon (#18241)
+		* The "Display the properties dialog" click action was
+		  not very useful and has been removed
+		* The size of the status icon is now dynamically
+		  adjusted when the size of the notification area
+		  changes
+		* The mailbox list icon selection algorithm has been
+		  made more coherent; the "timer" icon was confusing
+		  and has been removed
+		* In order to simplify the properties dialog, several
+		  options have been removed (they are however still
+		  available in GConf)
+		* The "Delay between mail checks" spin buttons did not
+		  retain a value typed in manually: fixed (#19379)
+		* If a mailbox was added or removed while the "Test
+		  messages" option was enabled, a bogus mailbox was
+		  added to the configuration file: fixed
+		* If some GConf default values are missing, MN will
+		  now refuse to run. This ensures that MN will not
+		  behave unexpectedly because of unproper
+		  installation.
+		* The simultaneous number of popups is now limited
+		  (/apps/mail-notification/popups/limit)
+		* New messages are no longer cleared when a mailbox
+		  error occurs. This way, already shown message popups
+		  will not unduly reappear after the error is unset
+		  (https://bugs.launchpad.net/ubuntu/+source/mail-notification/+bug/78487).
+		* Message popups are now closed when MN exits
+		* Minor bugs have been fixed (#20266, #20352, #20353)
+		* Mail Notification is now licensed under the terms of
+		  the GNU General Public License version 3
+		* The documentation is now licensed under the terms of
+		  the GNU Free Documentation License version 1.2
+
+	* Gmail, IMAP and POP3 changes:
+		* Passwords are now encrypted, using GNOME
+		  Keyring. Note that I do not endorse the flawed GNOME
+		  Keyring approach of granting passwords an
+		  encryption-worth status while ignoring other
+		  sensitive data. Furthermore, at the time of this
+		  writing, GNOME Keyring does not seem to prevent the
+		  memory it uses for storing the passwords from being
+		  swapped out to disk. However, despite these flaws,
+		  it has been observed that GNOME Keyring has
+		  beneficial psychological effects on some users. For
+		  increased psychological well-being, MN even moves
+		  the plain text passwords it finds in mailboxes.xml
+		  to the keyring.
+		* Filling in the username in the mailbox properties is
+		  now mandatory again (it had been optional since 2.0)
+
+	* IMAP and POP3 changes:
+		* The "Connect to untrusted server?" dialog is now
+		  closed when the mailbox is removed
+
+	* Gmail changes:
+		* Label support has been added
+
+	* IMAP changes:
+		* IMAP URLs (RFC 2192) having no path component are
+		  now handled properly again
+
+	* POP3 changes:
+		* The RSA MD5 implementation has been replaced by the
+		  glibc implementation because the RSA license is
+		  incompatible with the GPL (#21138)
+
+	* Maildir changes:
+		* The delete message action has been implemented
+
+	* MH changes:
+		* Race conditions with the MDA and MUA are now
+		  avoided, using a delay-based workaround
+
+	* Evolution changes:
+		* The Evolution 2.12 API change which caused the build
+		  to fail has been adapted to; as a consequence, MN
+		  now requires Evolution 2.12 or superior (#20904)
+		* The configure script now properly uses the
+		  unversioned evolution-plugin package which was
+		  introduced with Evolution 2.10 (#20904, #20124)
+
+	* Sylpheed changes:
+		* The delay-based race condition avoidance code now
+		  works regardless of the underlying file monitor
+		  implementation
+		* Claws Mail mailboxes (which contain both a
+		  .mh_sequences and a .sylpheed_mark file) are now
+		  detected as Sylpheed mailboxes rather than as MH
+		  mailboxes: this removes the need to use rcvstore
+		  from procmail
+		* The --enable-sylpheed-locking configure option has
+		  been removed: the appropriate race condition
+		  avoidance strategy is now automatically detected at
+		  runtime
+
+	* Updated translations:
+		* French
+		* Polish (Tomasz Sałaciński)
+
+4.1					June 26, 2007
+
+	* Core changes:
+		* The at-spi breakage which caused MN to hang at
+		  startup has been worked around (#19189)
+		* The order and presence of the message popup actions
+		  is now configurable via the
+		  /apps/mail-notification/popups/actions GConf key
+		* A delete message action has been added (#19696,
+		  based on a patch by David Woodhouse)
+		* Command line options are now parsed with the GOption
+		  framework
+		* The tooltip mail summary is now truly transparent
+		  (#19104)
+		* The src/automake.xml file is now distributed
+		* The documentation is now licensed under the terms of
+		  the GNU Free Documentation License
+
+	* mbox, MH, Maildir, POP3, IMAP, Mozilla and Sylpheed changes:
+		* Messages marked as spam (by SpamAssassin or
+		  bogofilter) are now ignored
+
+	* MH, Maildir and Sylpheed changes:
+		* Mailbox type change events are now properly handled
+		  on all systems, regardless of the underlying file
+		  monitor implementation
+
+	* POP3 and IMAP changes:
+		* If SSL/TLS support is not compiled in but a mailbox
+		  is configured to use SSL/TLS, MN now refuses to
+		  login (#20131)
+		* OpenSSL is now instructed to lookup CA certificates
+		  from default locations (#19578)
+		* The SSL/TLS certificate verification code now checks
+		  if the user-provided server name matches one of the
+		  certificate-provided server names (RFC 3501 11.1)
+		* OpenSSL locking is now enabled, and the configure
+		  script now ensures that OpenSSL supports
+		  multi-threading (#19643)
+
+	* POP3 changes:
+		* An interoperability issue has been fixed (#19934)
+
+	* IMAP changes:
+		* Two interoperability issues have been fixed (#18865,
+		  #20132)
+		* Uncompliant servers which do not send an untagged
+		  SEARCH response are now tolerated (#18876)
+
+	* Evolution changes:
+		* The 2.11/2.12 branch is now supported, and the
+		  mail-notification plugin has been renamed so that it
+		  does not conflict with the new Evolution plugin of
+		  the same name (#20124)
+
+	* Updated translations:
+		* French
+		* Czech (Pav Lucistnik)
+		* Dutch (Marcel J. Zwiebel)
+		* Swedish (Daniel Nylander)
+		* Serbian (Filip Miletic)
+
+4.0					January 17, 2007
+
+	No major changes.
+
+4.0 Release Candidate 2			December 7, 2006
+
+	* Evolution changes:
+		* An infinite loop has been fixed (see
+		  https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=208774,
+		  thanks to David Woodhouse for his help)
+
+	* Updated translations:
+		* Serbian (Filip Miletic)
+		* Czech (Pav Lucistnik)
+		* Dutch (Marcel J. Zwiebel)
+		* Brazilian Portuguese (Claudio André)
+
+4.0 Release Candidate 1			November 27, 2006
+
+	* Core changes:
+		* The mail summary popup has been replaced by
+		  libnotify message popups. These new message popups
+		  also provide actions such as "Open" and "Mark as Spam"
+		* Mozilla products (Mozilla, SeaMonkey, Thunderbird, ...)
+		  mailboxes are now supported
+		* The mailbox properties dialog has been redesigned
+		* A new click action has been added: open the latest
+		  message
+		* A MN icon set has been designed by Josef Vybíral
+		  (#18198)
+		* A --print-summary command line argument has been
+		  added, allowing to access message data from an
+		  external program
+		* A mail-changed GConf command setting has been added
+		  (it is executed when new mail is received or when a
+		  message is read)
+		* Handling of the GNOME mail reader command: instead
+		  of stripping %s, the first word of the command is
+		  now used; moreover, mozilla and evolution are now
+		  handled specially (#18257)
+		* The /desktop/gnome/url-handlers/mailto/needs_terminal
+		  GConf key is now respected
+		* Could no longer close the about dialog with recent
+		  GTK+ versions: fixed (#18252)
+
+	* POP3 changes:
+		* Messages kept on the server but marked as read are
+		  now discarded. Note that this only works with
+		  servers which send Status headers; most don't
+		  (#18164).
+
+	* Evolution changes:
+		* All mailboxes now share the same CORBA connection to
+		  Evolution (reduces resource usage)
+		* A mailbox properties dialog crash has been fixed
+		  (#18228)
+		* Some memory leaks have been fixed
+		* Support for the Evolution 2.9/2.10 branch has been
+		  added
+		* The Evolution 2.2 branch is no longer supported
+
+	* Updated translations:
+		* French
+		* Serbian (Filip Miletic)
+
+	* New translations:
+		* Catalan (Topi)
+
+3.0					June 14, 2006
+
+	* Updated translations:
+		* Japanese (Hiroshi Hasebe)
+
+3.0 Release Candidate 2			May 18, 2006
+
+	* Evolution changes:
+		* Evolution crashed when a message without Subject or
+		  From header was received: fixed
+		* Mail Notification could crash when removing an
+		  Evolution mailbox: fixed
+
+	* Updated translations:
+		* Japanese (Hiroshi Hasebe)
+		* Czech (Pav Lucistnik)
+		* Dutch (Marcel J. Zwiebel)
+
+	* New translations:
+		* Swedish (Daniel Nylander)
+
+3.0 Release Candidate 1			May 16, 2006
+
+	* Core changes:
+		* An alternate, compact mail summary has been added
+		* A "Display seen messages" option has been added
+		* The status icon can now be displayed permanently
+		* The "Delay between mail checks" option is now
+		  mailbox-specific
+		* The properties dialog has been reorganized
+		* The main window has been removed
+		* The status icon is now activated with a single click
+		  (http://bugzilla.gnome.org/show_bug.cgi?id=148829)
+		* The GTK+ bugs
+		  (http://bugzilla.gnome.org/show_bug.cgi?id=321886)
+		  which caused occasional crashes have been worked
+		  around
+		* If the MAIL environment variable is not defined or
+		  invalid, the system mailbox is now looked up in
+		  /var/spool/mail/username and /var/mail/username
+		  (based on a patch from Benoît Rouits)
+		* Since ~/.gnome2/mail-notification/mailboxes.xml may
+		  contain sensitive information, it is now saved with
+		  permissions set to 0600 (useful for systems where
+		  home directories have lax permissions)
+		* The "cannot enable immediate notification" error
+		  dialog has been removed
+		* The --list-features command line option has been
+		  removed (feature information is now displayed in the
+		  output of the --version option)
+		* The message handling performance has been improved
+		* If there are no mailboxes on startup, the properties
+		  dialog is now displayed
+		* The "Start Mail Notification on GNOME login" option
+		  no longer worked with GNOME >= 2.14 and has been
+		  removed: a .desktop file is now installed in the xdg
+		  autostart directory instead
+		* Since support for non-system sound events has been
+		  removed from GNOME 2.14, the
+		  mail-notification.soundlist file is no longer
+		  installed
+		* The mail reader setting has been removed; the mail
+		  reader configured in GNOME (Desktop -> Preferences
+		  -> Preferred Applications) will now be used
+		* The tooltip width is now limited to the screen width
+		* When coupled with a patched GNOME Panel (as shipped
+		  by FreeBSD and Debian, for instance), the status
+		  icon now supports panel transparency (patch
+		  forwarded by Bernat Tallaferro)
+
+	* mbox, Maildir, POP3, IMAP, Evolution and Sylpheed changes:
+		* Messages are now classified as unseen and seen; seen
+		  messages can be ignored by unchecking the "Display
+		  seen mail" option
+
+	* mbox changes:
+		* Compressed mailboxes (gzip and bzip2) are now
+		  handled transparently, and support immediate
+		  notification
+
+	* POP3, IMAP and Gmail changes:
+		* A regression which allowed mail checks to overlap
+		  has been fixed
+
+	* POP3 and IMAP changes:
+		* If the server advertises the STLS/STARTTLS
+		  capability but replies ERR/BAD when the
+		  STLS/STARTTLS command is issued, Mail Notification
+		  now logs out instead of proceeding
+		* If multiple mailboxes have the same type, hostname,
+		  port, connection type and username, Mail
+		  Notification will now detect that the mailboxes
+		  share the same account and will only prompt for the
+		  password once per session (when the password is not
+		  entered in the properties dialog, that is)
+
+	* POP3 changes:
+		* Non-UTF-8 server responses are now accepted
+
+	* IMAP changes:
+		* Non-ASCII server responses are now accepted (these
+		  responses violate RFC 3501, but we follow the RFC
+		  793 robustness principle "be liberal in what you
+		  accept"); fixes connection problems with
+		  internationalized Exchange servers, which violate
+		  RFC 3501 by sending non-ASCII characters in their
+		  greeting message
+		* Empty continuation responses are now allowed (fixes
+		  authentication with some SASL mechanisms)
+		* Play nice with uncompliant servers by using
+		  BODY.PEEK rather than BODY, so that they do not set
+		  the \Seen flag (patch from Jacob Berkman)
+		* The IDLE mode is now cycled every 29 minutes, as
+		  advised by RFC 2177
+
+	* Evolution changes:
+		* Support for the Evolution 2.4 and 2.6 branches has
+		  been added; untested support for the Evolution
+		  2.7/2.8 branch has been added; the Evolution source
+		  tree is no longer needed for Evolution >= 2.4
+
+	* Sylpheed changes:
+		* With the help of a Sylpheed patch, Mail Notification
+		  can now reliably avoid race conditions which could
+		  occur when Sylpheed was running (see the
+		  --enable-sylpheed-locking discussion in the INSTALL
+		  file)
+
+	* Updated translations:
+		* French
+
+	* New translations:
+		* Czech (Pav Lucistnik)
+		* Brazilian Portuguese (Claudio André)
+		* Dutch (Marcel J. Zwiebel)
+		* Japanese (Hiroshi Hasebe)
+
+2.0					August 9, 2005
+
+	* Core changes:
+		* Evolution support has been added
+		* Mailboxes can now be assigned a custom name
+		* For greater flexibility, mailboxes configuration is
+		  now stored in ~/.gnome2/mail-notification/mailboxes.xml
+		  (previously, it was stored in the GConf database)
+		* The mailbox list widget has been redesigned
+		* The mailbox properties dialog has been redesigned
+		* Copying a mailbox to the clipboard does not make it
+		  available to Nautilus anymore: that behaviour was
+		  confusing and useless. However, pasting files copied
+		  from Nautilus still works.
+		* If a mailbox requires authentication and the
+		  necessary credentials are not provided in the
+		  mailbox properties dialog, Mail Notification now
+		  lets GNOME prompt the user for the credentials
+		* A test popup can now be displayed from the Mail
+		  Summary Popup properties tab
+		* The --report command line option has been removed
+		* The Mail Notification item is now also listed in the
+		  GNOME >= 2.10 Preferences menu
+		* The welcome dialog has been removed
+		* A few icons have been modified
+		* The third-party libegg code has been updated
+		* Now requires GTK+ version 2.6.0 or superior
+		* Minor fixes and cleanups
+
+	* mbox, MH, Maildir and Sylpheed changes:
+		* Immediate notification did not work properly with
+		  fast kernel notifiers (kqueue, inotify, dnotify,
+		  ...): fixed
+		* Unseekable files are now supported
+		* Mailbox type changes are now detected and handled
+		  (previously, Mail Notification had to be restarted
+		  if a mailbox changed type)
+		* The location of the system mailbox is now resolved
+		  at runtime rather than when the mailbox is added
+		  (eases sharing the Mail Notification settings across
+		  multiple computers)
+
+	* mbox changes:
+		* When immediate notification is not available, the
+		  mailbox is now also checked when its size or ctime
+		  changes (previously, it was only checked if its
+		  mtime had changed)
+
+	* Sylpheed changes:
+		* Mail Notification now tries to avoid race conditions
+		  which may occur while Sylpheed is being used
+		* Mark file errors are not ignored anymore
+		* A memory leak has been fixed
+
+	* POP3, IMAP and Gmail changes:
+		* The username can now also be left out, and will be
+		  prompted when needed
+
+	* POP3 and IMAP changes:
+		* Non-UTF-8 characters are now escaped from
+		  uncompliant server responses before being displayed
+		  in the user interface
+		* If the system resolver is not reentrant,
+		  getaddrinfo()/getnameinfo() calls are now serialized
+		* The Cyrus SASL library is now initialized only once,
+		  since multiple sasl_client_init()/sasl_done()
+		  invocations may cause problems (another benefit is
+		  that it allows the SASL library to use the POP3
+		  initial client response feature, which saves a
+		  roundtrip during the SASL authentication exchange)
+		* When the authentication mechanism option is set to
+		  "autodetect", Mail Notification will now try to
+		  authenticate using each server-supported SASL
+		  mechanism
+		* Mail Notification was incorrectly disallowing empty
+		  SASL server challenges, although they are legit:
+		  fixed
+
+	* POP3 changes:
+		* The TOP optional command is now supported. This
+		  solves some issues with POP3 servers (for instance,
+		  pop.gmail.com) which incorrectly archive mails that
+		  have been accessed using the RETR command.
+		* Initial SASL client responses are now handled
+		  properly (passed as an argument to the AUTH command
+		  rather than in the SASL authentication exchange)
+
+	* IMAP changes:
+		* If, while idling, the server abruptly drops the
+		  connection, Mail Notification now reconnects rather
+		  than considering it an error
+		* When idling, Mail Notification now only wakes up if
+		  it receives a response indicating that the mailbox
+		  might have changed
+		* By default, Mail Notification now avoids using the
+		  IDLE extension if the remote server software is
+		  known to have a broken IDLE implementation
+		* UTF-8 mailbox names are now converted to modified
+		  UTF-7, as required by RFC 3501
+
+	* Gmail changes:
+		* Functionality has been restored after the Gmail web
+		  site was modified; to prevent future disruptions and
+		  simplify the source code, the Gmail Atom feed
+		  (https://mail.google.com/mail/feed/atom) is now used
+		* Now works even if the Gmail account language is not
+		  set to English
+		* libsoup and ICU are no longer required
+
+	* Updated translations:
+		* French
+		* Serbian (Filip Miletic)
+		* German (Hendrik Brandt, Jens Seidel)
+
+1.1					March 6, 2005
+
+	* IMAP changes:
+		* is more tolerant towards uncompliant FETCH responses
+		* ignores case of responses (RFC 3501)
+		* makes sure the server responses are valid ASCII (RFC
+		  3501)
+
+	* Gmail changes:
+		* properly converts timestamps (requires ICU)
+		* handles timestamps from previous years
+		* displays all the messages of a conversation
+
+	* POP3 and IMAP changes:
+		* does not loop infinitely when no password is
+		  specified, an authentication mechanism is specified
+		  and authentication fails
+		* does not abort when a SASL authentication mechanism
+		  is specified and the server does not support any
+		  SASL authentication mechanism
+
+	* POP3 and Gmail changes:
+		* makes sure the server responses are valid UTF-8
+
+	* The mail summary dialog has been replaced by a main window,
+	  for controlling Mail Notification when the status icon is
+	  hidden
+	* Added "update the mail status" double-click action
+	* The tooltip mailbox lists (Mailboxes Having New Mail,
+	  Errors, Unsupported Mailboxes) are now sorted
+	* GMime is now mandatory for mbox, MH, Maildir, Sylpheed, POP3
+	  and IMAP mailbox support
+	* The --quit command line argument has been added
+	* Minor fixes and cleanups
+
+	* Updated translations:
+		* Polish (Maurycy Pawłowski-Wieroński)
+		* Serbian (Filip Miletic)
+		* Portuguese (Duarte Henriques)
+		* German (Hendrik Brandt)
+
+1.0					November 25, 2004
+
+	* Some minor IMAP issues have been fixed
+	* Some IMAP servers did not properly support the IDLE
+	  extension, so it can now be disabled in the mailbox
+	  properties
+	* If the POP3 or IMAP password is left blank, it will now be
+	  prompted only if needed
+	* When MIME support was disabled, the Sylpheed backend was not
+	  considering unread messages as new: fixed
+
+	* Updated translations:
+		* Serbian (Filip Miletic)
+		* German (Hendrik Brandt)
+		* Portuguese (Duarte Henriques)
+
+	* New translations:
+		* Polish (Tomasz Sarota-Raczek)
+
+0.99					November 15, 2004
+
+	* The IMAP capabilities sent in a PREAUTH, AUTHENTICATE or
+	  LOGIN response were ignored, and a CAPABILITY command was
+	  not re-issued after a successful authentication: fixed
+	* Added a "Display mail summary in tooltip" option
+
+0.8.1					November 4, 2004
+
+	* Mail summary popup changes:
+		* do not recreate it when updating its contents:
+		  removes some flicker
+		* added a workaround for a Metacity bug which
+		  sometimes misplaced the popup
+		* the text fonts can now be configured from the
+		  properties dialog
+
+	* Now compiles cleanly even when -fstrict-aliasing is in use
+	* Some additional workarounds for
+	  http://bugzilla.gnome.org/show_bug.cgi?id=64764 have been
+	  added: fixes a few random crashes
+	* Some widgets have been named, so that they can easily be
+	  matched in a GTK+ resource file
+	* The status icon could not be customized from a resource
+	  file: fixed
+
+	* Updated translations:
+		* Serbian (Filip Miletic)
+
+0.8.0					October 31, 2004
+
+	* The double-click action can now be customized
+	* A mail reader can now be launched
+	* IMAP IDLE support has been implemented
+	* The mail summary layout has been improved
+	* The mail summary is now also displayed in the tooltip
+	* The tooltip now supports keyboard activation
+	* A mail summary popup option allowing to only display recent
+	  mail has been added
+	* A bug which caused SASL authentication to sometimes fail has
+	  been fixed
+	* The Gmail parser was getting confused by special strings
+	  embedded in message fields: fixed
+
+0.7.1					October 25, 2004
+
+	* Gmail changes:
+		* does not crash when a GNOME proxy is set
+		* handles starred and labelled messages
+		* ignores non-inbox messages
+		* messages were considered unseen on each check and
+		  the mail summary was always popped up: fixed
+
+	* The POP3/IMAP/Gmail password can now be left blank (in such
+	  case, it will be prompted when needed and not be saved to
+	  permanent storage)
+	* A command can now be executed when all mail has been read
+	* The user interface now displays the IMAP folder name (unless
+	  it is inbox)
+	* The tooltip now displays message counts
+	* Minor fixes and cleanups
+
+	* Updated translations:
+		* Serbian (Filip Miletic)
+		* German (Hendrik Brandt)
+		* Portuguese (Duarte Henriques)
+
+0.7.0					October 6, 2004
+
+	* Binaries compiled with GCC 3.4.x were crashing in various
+	  places: fixed
+	* Fixed a vulnerability in the IMAP code (a malicious IMAP
+	  server could trigger a null pointer dereference by sending
+	  an invalid reply)
+	* Fixed a vulnerability in the Gmail code (a man in the middle
+	  attack could, with some libsoup configurations, trigger a
+	  null pointer indirection)
+	* The properties dialog has been split into tabs
+	* A mail summary has been added (requires GMime version 2.0 or
+	  superior)
+	* Double-clicking on the icon now displays the mail summary
+	  (the double-clicked command has been removed)
+	* The "new mail" command is now executed every time a mailbox
+	  receives one or more new messages
+	* Tracks the latest Gmail change (reported by Vincent Noel)
+	* Gmail support now requires libsoup version 2.2 or superior
+	  (which is part of GNOME 2.8)
+	* The manual is now installed in the proper location (Pascal
+	  Giard, Christian Krause)
+	* The --with-gconf-schema-file-dir configure argument was
+	  ignored: fixed (Julio M. Merino Vidal)
+	* A few minor issues have been fixed
+	* Some cleanups have been performed
+	* The German translations have been updated (Hendrik Brandt)
+	* Added Serbian translations (Filip Miletic)
+	* Added Bulgarian translations (Vladimir Petkov)
+
+0.6.2					September 9, 2004
+
+	* Added STARTTLS support to the IMAP backend
+	* Added STLS support to the POP3 backend
+	* Now prompts the user before connecting to untrusted SSL/TLS
+	  servers
+	* Added a "Start Mail Notification on GNOME login" option
+	* Added a "Blink on errors" option
+	* Commands are now executed in the user's shell
+	* The Gmail log is now dumped when --enable-info is in use
+	* Added a --unset-obsolete-configuration command line argument
+	* An obsolete mailbox list is now handled without being
+	  rewritten (a step towards full forward compatibility of
+	  GConf keys)
+	* "SSL" is now called "SSL/TLS", as we provide SSLv2, SSLv3
+	  and TLSv1 support
+	* Fixed a typo in the MD5 code which prevented builds on some
+	  platforms (reported by Andy Shaw)
+	* Automatic mailboxes were also polled: fixed
+	* Added German translations (Hendrik Brandt)
+	* Added Portuguese translations (Duarte Henriques)
+	* A few minor issues have been fixed
+	* Some cleanups have been performed
+	* Now requires GNOME version 2.6 or superior
+
+0.6.1					August 19, 2004
+
+	* File descriptor leaks in the Sylpheed and Maildir backends
+	  have been fixed
+	* It was not possible to use some special characters (such as
+	  '@') in usernames, passwords etc (reported by Ronny
+	  Schoebel): now escapes URIs
+	* Now properly quotes arguments to the IMAP LOGIN and STATUS
+	  commands
+	* Gmail support didn't work in all situations: fixed (thanks
+	  to Phil Nelson for his help)
+	* A first startup dialog has been added
+	* A memory leak has been fixed
+	* A few minor issues have been fixed
+	
+0.6.0					August 16, 2004
+
+	* Added IMAP support
+	* Added SSL support for POP3 and IMAP (requires OpenSSL)
+	* Added SASL authentication support for POP3 and IMAP
+	  (requires Cyrus SASL 2)
+	* Added APOP authentication support
+	* Gmail support has been fixed
+	* If there is no new mail, the icon is now hidden
+	* Now complies with the HIG 2.0
+	* Now installs a GNOME sound event
+	* The user interface has been improved
+	* The mail icon is now taken from the icon theme
+	* The command line arguments have been modified
+	* The POP3 handler now honours the LOGIN-DELAY capability
+	* Objects are now generated with GOB
+	* Some cleanups have been performed
+	* A few minor bugs have been fixed
+	* Does not depend on GNet anymore
+
+0.5.0					July 21, 2004
+
+	* Added Gmail support (requires libsoup)
+	* The user interface has been improved
+	* Now supports IPv6 POP3 servers even if given as an IPv6
+	  address rather than as a hostname
+	* Now uses intltool
+	* The manual has been improved
+	* Added Russian translations for the .desktop file (submitted
+	  by Dan Korostelev)
+	* The output of ./configure has been cleaned up
+	* ChangeLog files were not being accurately maintained and are
+	  not shipped anymore
+
+0.4.0					June 29, 2004
+
+	* Fixed a vulnerability in the POP3 code (a malicious POP3
+	  server could overflow the stack with an invalid STAT reply)
+	* Now uses automatic notification if available (requires FAM)
+	* Now uses GnomeVFS for all I/O operations
+	* Now supports drag and drop
+	* The user interface has been improved
+	* mbox detection is now stricter
+	* Now handles non-Unicode filenames
+	* Tries harder to hide POP3 passwords from the interface
+	* A few minor bugs have been fixed
+	* A few memory leaks have been fixed
+	* Some code cleanups have been performed
+	* Switched to Autoconf 2.59 and Automake 1.8.4
+	* Now requires GTK+ version 2.4.0 or superior
+
+0.3.4					March 19, 2004
+
+	* Some minor UI tweaks have been performed
+	* A minor bug has been fixed
+
+0.3.3					March 12, 2004
+
+	* A bug in the mbox checking code has been fixed (reported by
+	  Pau Artigas)
+	* A few minor bugs have been fixed
+	* A few memory leaks have been fixed
+
+0.3.2					December 24, 2003
+
+	* A bug in the Sylpheed checking code has been fixed
+	* Restarting notification-area-applet is now handled properly
+	* libglade is now used instead of code generation
+	* Some code cleanups have been performed
+
+0.3.1					October 20, 2003
+
+	* A few minor bugs have been fixed
+
+0.3.0					October 2, 2003
+
+	* Major code cleanup
+	* Implemented Sylpheed and POP3 support
+	* The file selection dialog now remembers its last path
+	* Speed optimizations
+	* In order to maintain UI responsiveness during mail checks,
+	  the application is now multi-threaded
+	* Error messages are now displayed in a dialog box if the
+	  check has been launched interactively
+
+0.2.0					September 24, 2003
+
+	* Implemented mbox and MH support
+	* Added exhaustive error reporting
+	* Enriched the documentation
+
+0.1.0					September 18, 2003
+
+	* Is now a GNOME application
+	* Added a graphical user interface (preferences dialog and
+	  popup menu)
+	* Internationalization has been performed, and a French
+	  translation is already available
+	* Switched to Autoconf 2.57 and Automake 1.7.5
+
+0.0.1					July 20, 2003
+	
+	* Initial release

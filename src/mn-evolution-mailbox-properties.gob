@@ -1,0 +1,137 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-mailbox-properties.h"
+%}
+
+%privateheader{
+#include "mn-evolution-client.h"
+%}
+
+%{
+#include <glib/gi18n.h>
+#include "mn-evolution-mailbox.h"
+#include "mn-stock.h"
+#include "mn-mailbox-properties-private.h"
+#include "mn-shell.h"
+#include "mn-evolution-client-dbus.h"
+#include "mn-util.h"
+#include "mn-evolution-folder-tree-client.h"
+%}
+
+class MN:Evolution:Mailbox:Properties from MN:Mailbox:Properties
+{
+  private GtkWidget *tree;
+
+  private char *name destroywith g_free;
+
+  property BOOLEAN complete (override)
+    get
+    {
+      MNEvolutionFolderTreeClient *tree = MN_EVOLUTION_FOLDER_TREE_CLIENT(selfp->tree);
+      g_value_set_boolean(VAL, mn_evolution_folder_tree_client_get_connected(tree) && tree->selected_uri != NULL);
+    };
+
+  property STRING default_name (override)
+    get { g_value_set_string(VAL, selfp->name); };
+
+  class_init (class)
+  {
+    MNMailboxPropertiesClass *p_class = MN_MAILBOX_PROPERTIES_CLASS(class);
+
+    p_class->type = "evolution";
+    p_class->stock_id = MN_STOCK_EVOLUTION_MAILBOX;
+    p_class->combo_label = "Evolution";
+    p_class->enable_check_delay = FALSE;
+  }
+
+  init (self)
+  {
+    MNMailboxProperties *properties = MN_MAILBOX_PROPERTIES(self);
+    GtkWidget *vbox;
+
+    /* translators: header capitalization */
+    vbox = mn_mailbox_properties_add_general_section(properties, _("Folder"));
+
+    selfp->tree = mn_evolution_folder_tree_client_new();
+    gtk_box_pack_start(GTK_BOX(vbox), selfp->tree, TRUE, TRUE, 0);
+    gtk_widget_show(selfp->tree);
+
+    g_object_connect(selfp->tree,
+		     "swapped-signal::notify::connected", mn_mailbox_properties_notify_complete, self,
+		     "signal::notify::selected-uri", self_notify_selected_uri_h, self,
+		     "signal::folder-activated", self_folder_activated_h, self,
+		     NULL);
+  }
+
+  private void
+    notify_selected_uri_h (GObject *object, GParamSpec *pspec, gpointer user_data)
+  {
+    Self *self = user_data;
+    MNEvolutionClient *client;
+    char *name = NULL;
+
+    client = mn_evolution_client_get();
+    if (client->proxy)
+      org_gnome_MailNotification_Evolution_get_folder_name(client->proxy, MN_EVOLUTION_FOLDER_TREE_CLIENT(selfp->tree)->selected_uri, &name, NULL);
+
+    g_free(selfp->name);
+    selfp->name = name;
+
+    g_object_notify(G_OBJECT(self), "complete");
+    g_object_notify(G_OBJECT(self), "default-name");
+  }
+
+  private void
+    folder_activated_h (MNEvolutionFolderTreeClient *client, gpointer user_data)
+  {
+    Self *self = user_data;
+
+    gtk_window_activate_default(GTK_WINDOW(MN_MAILBOX_PROPERTIES(self)->dialog));
+  }
+
+  override (MN:Mailbox:Properties) void
+    set_mailbox (MNMailboxProperties *properties, MNMailbox *mailbox)
+  {
+    Self *self = SELF(properties);
+    MNEvolutionMailbox *evolution_mailbox = MN_EVOLUTION_MAILBOX(mailbox);
+
+    mn_evolution_folder_tree_client_set_selected_uri(MN_EVOLUTION_FOLDER_TREE_CLIENT(selfp->tree), evolution_mailbox->uri);
+
+    g_free(selfp->name);
+    selfp->name = g_strdup(evolution_mailbox->folder_name);
+  }
+
+  override (MN:Mailbox:Properties) MNMailbox *
+    get_mailbox (MNMailboxProperties *properties)
+  {
+    Self *self = SELF(properties);
+    MNMailbox *mailbox;
+
+    mailbox = PARENT_HANDLER(properties);
+
+    g_object_set(mailbox,
+		 MN_EVOLUTION_MAILBOX_PROP_URI(MN_EVOLUTION_FOLDER_TREE_CLIENT(selfp->tree)->selected_uri),
+		 MN_EVOLUTION_MAILBOX_PROP_FOLDER_NAME(selfp->name),
+		 NULL);
+
+    return mailbox;
+  }
+}

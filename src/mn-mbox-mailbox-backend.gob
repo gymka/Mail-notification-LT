@@ -1,0 +1,41 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-base-mbox-mailbox-backend.h"
+%}
+
+%{
+#include "mn-base-mbox-mailbox-backend-private.h"
+#include "mn-message-mime.h"
+%}
+
+class MN:Mbox:Mailbox:Backend from MN:Base:Mbox:Mailbox:Backend
+{
+  class_init (class)
+  {
+    MN_VFS_MAILBOX_BACKEND_CLASS(class)->format = "mbox";
+  }
+
+  override (MN:Base:Mbox:Mailbox:Backend) MNMessage *
+    get_new_message (MNBaseMboxMailboxBackend *backend, GMimeMessage *mime_message)
+  {
+    return mn_message_new_from_mime_message(MN_MAILBOX(MN_VFS_MAILBOX_BACKEND(backend)->mailbox), mime_message, NULL, 0, TRUE);
+  }
+}

@@ -1,0 +1,42 @@
+===============================================================================
+ Mail Notification credits
+===============================================================================
+
+Developed by Jean-Yves Lefort <jylefort@brutele.be>.
+
+Translators:
+	* Claudio André <claudio.andre@correios.net.br> (Brazilian
+	  Portuguese)
+	* Hendrik Brandt <eru@gmx.li>,
+	  Jens Seidel <jensseidel@users.sf.net> (German)
+	* Hiroshi Hasebe <hhasebe@DVOI.COM> (Japanese)
+	* Duarte Henriques <duarte_henriques@myrealbox.com>
+	  (Portuguese)
+	* Nacho Hermoso de Mendoza <gnacho@gmail.com> (Spanish)
+	* Dan Korostelev <dan@ats.energo.ru> (Russian)
+	* Pav Lucistnik <pav@FreeBSD.org> (Czech)
+	* Filip Miletic <filmil@gmail.com> (Serbian)
+	* Daniel Nylander <po@danielnylander.se> (Swedish)
+	* Vladimir Petkov <vpetkov@i-space.org> (Bulgarian)
+	* Tomasz Sarota-Raczek <tomasz.sarota.raczek@gmail.com>,
+	  Maurycy Pawłowski-Wieroński <maurycy@abstrakcja.pl>,
+	  Tomasz Sałaciński <tsalacinski@gmail.com> (Polish)
+	* Topi <topi@phreaker.net> (Catalan)
+	* Marcel J. Zwiebel <mj.zwiebel@nonux.nl> (Dutch)
+
+Graphic designers:
+	* Josef Vybíral <cornelius@vybiral.info>
+	  (art/*/apps/mail-notification.*)
+
+External code sources:
+	* libegg (src/egg*)
+	* Nautilus (src/nautilus*)
+	* The GNU C Library (src/mn-md5.*)
+
+External image sources (images taken as-is or slightly modified):
+	* Google (gmail.png)
+	* Yahoo! (yahoo.png)
+	* Microsoft (hotmail.png)
+
+External sound sources:
+	* Ekiga (new-mail.wav)

@@ -1,0 +1,76 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-vfs-mailbox.h"
+%}
+
+%{
+#include <glib/gi18n.h>
+#include "mn-mailbox-private.h"
+%}
+
+class MN:Custom:VFS:Mailbox from MN:VFS:Mailbox
+{
+  public char *uri destroywith g_free;
+  property STRING uri (link, flags = MN_MAILBOX_PARAM_LOAD_SAVE | MN_MAILBOX_PARAM_REQUIRED);
+
+  class_init (class)
+  {
+    MN_MAILBOX_CLASS(class)->type = "custom-vfs";
+  }
+
+  override (MN:Mailbox) void
+    seal (MNMailbox *mailbox)
+  {
+    MN_VFS_MAILBOX(mailbox)->uri = gnome_vfs_make_uri_canonical(SELF(mailbox)->uri);
+
+    PARENT_HANDLER(mailbox);
+  }
+
+  override (MN:Mailbox) MNMailbox *
+    parse_uri (MNMailbox *dummy, const char *uri)
+  {
+    GnomeVFSURI *vfs_uri;
+    MNMailbox *mailbox = NULL;
+
+    vfs_uri = gnome_vfs_uri_new(uri);
+    if (vfs_uri)
+      {
+	mailbox = mn_mailbox_new("custom-vfs", "uri", uri, NULL);
+	gnome_vfs_uri_unref(vfs_uri);
+      }
+
+    return mailbox;
+  }
+
+  override (MN:Mailbox) void
+    check (MNMailbox *mailbox)
+  {
+    if (MN_VFS_MAILBOX(mailbox)->vfs_uri)
+      {
+	PARENT_HANDLER(mailbox);
+      }
+    else
+      {
+	mn_mailbox_set_error(mailbox, _("invalid location"));
+	mn_mailbox_set_poll(mailbox, FALSE); /* disable the mailbox */
+      }
+  }
+}

@@ -1,0 +1,74 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-pi-mailbox-properties.h"
+%}
+
+%{
+#include <glib/gi18n.h>
+#include "mn-mailbox-properties.h"
+#include "mn-auth-combo-box.h"
+#include "mn-util.h"
+#include "mn-authenticated-mailbox-properties-private.h"
+#include "mn-pi-mailbox-properties-private.h"
+#include "mn-properties-dialog.h"
+#include "mn-pop3-mailbox.h"
+%}
+
+class MN:POP3:Mailbox:Properties from MN:PI:Mailbox:Properties
+{
+  property STRING default_name (override)
+    get
+    {
+      const char *username;
+      const char *server;
+
+      mn_authenticated_mailbox_properties_get_contents(MN_AUTHENTICATED_MAILBOX_PROPERTIES(self),
+						       &username,
+						       NULL);
+      mn_pi_mailbox_properties_get_contents(MN_PI_MAILBOX_PROPERTIES(self),
+					    NULL,
+					    NULL,
+					    &server,
+					    NULL);
+
+      g_value_take_string(VAL, mn_pop3_mailbox_build_name(username, server));
+    };
+
+  class_init (class)
+  {
+    MNMailboxPropertiesClass *p_class = MN_MAILBOX_PROPERTIES_CLASS(class);
+
+    p_class->type = "pop3";
+    p_class->combo_label = "POP3";
+  }
+
+  init (self)
+  {
+    MNPIMailboxProperties *pi = MN_PI_MAILBOX_PROPERTIES(self);
+    int i;
+
+    mn_auth_combo_box_append(MN_AUTH_COMBO_BOX(pi->auth_combo), "+APOP", "APOP");
+    mn_auth_combo_box_append(MN_AUTH_COMBO_BOX(pi->auth_combo), "+USERPASS", "USER/PASS");
+
+    for (i = 0; i < MN_PI_MAILBOX_N_CONNECTION_TYPES; i++)
+      gtk_spin_button_set_value(GTK_SPIN_BUTTON(pi->port_spin[i]), mn_pop3_mailbox_default_ports[i]);
+  }
+}

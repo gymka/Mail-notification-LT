@@ -1,0 +1,116 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-vfs-mailbox.h"
+%}
+
+%{
+#include <glib/gi18n.h>
+#include "mn-stock.h"
+#include "mn-mailbox-private.h"
+%}
+
+class MN:System:VFS:Mailbox from MN:VFS:Mailbox
+{
+  class_init (class)
+  {
+    MN_MAILBOX_CLASS(class)->type = "system-vfs";
+  }
+
+  override (MN:Mailbox) void
+    seal (MNMailbox *mailbox)
+  {
+    mn_mailbox_set_stock_id(mailbox, MN_STOCK_SYSTEM_MAILBOX);
+
+    MN_VFS_MAILBOX(mailbox)->uri = g_strdup(self_get_uri());
+
+    mailbox->runtime_name = g_strdup(_("System mailbox"));
+
+    PARENT_HANDLER(mailbox);
+  }
+
+  override (MN:Mailbox) MNMailbox *
+    parse_uri (MNMailbox *dummy, const char *uri)
+  {
+    const char *system_uri;
+    MNMailbox *mailbox = NULL;
+
+    system_uri = self_get_uri();
+    if (system_uri && gnome_vfs_uris_match(uri, system_uri))
+      mailbox = mn_mailbox_new("system-vfs", NULL);
+
+    return mailbox;
+  }
+
+  override (MN:Mailbox) void
+    check (MNMailbox *mailbox)
+  {
+    if (MN_VFS_MAILBOX(mailbox)->uri)
+      {
+	PARENT_HANDLER(mailbox);
+      }
+    else
+      {
+	mn_mailbox_set_error(mailbox, _("system mailbox not found"));
+	mn_mailbox_set_poll(mailbox, FALSE); /* disable the mailbox */
+      }
+  }
+
+  public const char *
+    get_uri (void)
+  {
+    static char *global_uri = NULL;
+    G_LOCK_DEFINE_STATIC(global_uri);
+    const char *uri;
+
+    G_LOCK(global_uri);
+    if (! global_uri)
+      {
+	const char *mail = g_getenv("MAIL");
+
+	if (mail && g_path_is_absolute(mail) && g_file_test(mail, G_FILE_TEST_EXISTS))
+	  global_uri = gnome_vfs_get_uri_from_local_path(mail);
+
+	if (! global_uri)	/* no MAIL or invalid contents */
+	  {
+	    const char *username = g_get_user_name();
+	    static const char *spool_paths[] = { "/var/spool/mail", "/var/mail" };
+	    int i;
+
+	    for (i = 0; i < G_N_ELEMENTS(spool_paths); i++)
+	      {
+		char *path;
+
+		path = g_build_filename(spool_paths[i], username, NULL);
+		if (g_file_test(path, G_FILE_TEST_EXISTS))
+		  global_uri = gnome_vfs_get_uri_from_local_path(path);
+		g_free(path);
+
+		if (global_uri)
+		  break;
+	      }
+	  }
+      }
+    uri = global_uri;
+    G_UNLOCK(global_uri);
+
+    return uri;
+  }
+}

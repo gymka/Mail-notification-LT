@@ -1,0 +1,172 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-text-table.h"
+#include "mn-message.h"
+%}
+
+%privateheader{
+#include <time.h>
+%}
+
+%{
+#include "mn-util.h"
+#include <glib/gi18n.h>
+
+typedef struct
+{
+  MNMessageView		*self;
+  MNTextTableCell	*cell;
+  GList			*link;
+  time_t		past_time;
+} PastTimeCell;
+
+/* use a GQueue for O(1) append and removal */
+static GQueue past_time_cells = G_QUEUE_INIT;
+static unsigned int past_time_cells_timeout_id = 0;
+%}
+
+class MN:Message:View from MN:Text:Table (abstract)
+{
+  private GSList *past_time_cells;
+
+  finalize (self)
+  {
+    self_clear_past_time_cells(self);
+  }
+
+  override (MN:Text:Table) void
+    clear (MNTextTable *table)
+  {
+    self_clear_past_time_cells(SELF(table));
+
+    PARENT_HANDLER(table);
+  }
+
+  public void
+    set_messages (self, GSList *messages)
+  {
+    time_t now;
+    GSList *l;
+
+    mn_text_table_clear(MN_TEXT_TABLE(self));
+
+    self_append_header(self);
+
+    now = mn_time();
+
+    MN_LIST_FOREACH(l, messages)
+      {
+	MNMessage *message = l->data;
+
+	self_append_message(self, message, now);
+	if (l->next)
+	  self_append_message_separator(self);
+      }
+  }
+
+  virtual private void
+    append_header (self);
+
+  virtual private void
+    append_message (self, MN:Message *message (check null type), time_t now);
+
+  virtual private void
+    append_message_separator (self);
+
+  protected void
+    append_past_time_cell (self, time_t past_time, time_t now)
+  {
+    PastTimeCell *pcell;
+
+    pcell = g_new(PastTimeCell, 1);
+    pcell->self = self;
+    pcell->cell = mn_text_table_append_text_cell(MN_TEXT_TABLE(self), NULL);
+    pcell->link = g_list_alloc();
+    pcell->link->data = pcell;
+    pcell->past_time = past_time;
+
+    self_update_past_time_cell(pcell, now);
+
+    selfp->past_time_cells = g_slist_prepend(selfp->past_time_cells, pcell);
+    g_queue_push_tail_link(&past_time_cells, pcell->link);
+
+    if (! past_time_cells_timeout_id)
+      self_install_past_time_cells_timeout();
+  }
+
+  private void
+    clear_past_time_cells (self)
+  {
+    GSList *l;
+
+    if (! selfp->past_time_cells)
+      return;
+
+    MN_LIST_FOREACH(l, selfp->past_time_cells)
+      {
+	PastTimeCell *pcell = l->data;
+
+	g_queue_delete_link(&past_time_cells, pcell->link);
+	g_free(pcell);
+      }
+
+    mn_g_slist_clear(&selfp->past_time_cells);
+
+    if (g_queue_is_empty(&past_time_cells))
+      mn_source_clear(&past_time_cells_timeout_id);
+  }
+
+  private void
+    install_past_time_cells_timeout (void)
+  {
+    GTimeVal now;
+    int timeout;
+
+    g_get_current_time(&now);
+    timeout = (G_USEC_PER_SEC - now.tv_usec) / 1000 + 1;
+
+    past_time_cells_timeout_id = gdk_threads_add_timeout(timeout, self_update_past_time_cells_cb, NULL);
+  }
+
+  private gboolean
+    update_past_time_cells_cb (gpointer data)
+  {
+    time_t now;
+    GList *l;
+
+    now = mn_time();
+    MN_QUEUE_FOREACH(l, &past_time_cells)
+      self_update_past_time_cell(l->data, now);
+
+    self_install_past_time_cells_timeout();
+    return FALSE;		/* remove source */
+  }
+
+  private void
+    update_past_time_cell (PastTimeCell *pcell (check null), time_t now)
+  {
+    char *formatted;
+
+    formatted = mn_format_past_time(pcell->past_time, now);
+    mn_text_table_cell_set_text(MN_TEXT_TABLE(pcell->self), pcell->cell, formatted);
+    g_free(formatted);
+  }
+}

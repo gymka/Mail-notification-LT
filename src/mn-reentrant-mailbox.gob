@@ -1,0 +1,136 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-mailbox.h"
+%}
+
+%{
+#include <gtk/gtk.h>
+#include "mn-mailbox-private.h"
+#include "mn-util.h"
+
+typedef struct
+{
+  MNReentrantMailbox	*self;
+  int			check_id;
+} CheckInfo;
+%}
+
+class MN:Reentrant:Mailbox from MN:Mailbox (abstract)
+{
+  private unsigned int queue_check_id;
+
+  private int check_id;
+  private int check_unique_id;
+
+  override (MN:Mailbox) void
+    removed (MNMailbox *mailbox)
+  {
+    Self *self = SELF(mailbox);
+
+    PARENT_HANDLER(mailbox);
+
+    /* abort the current check */
+    g_atomic_int_set(&selfp->check_id, 0);
+  }
+
+  finalize (self)
+  {
+    if (selfp->queue_check_id)
+      g_source_remove(selfp->queue_check_id);
+  }
+
+  /**
+   * queue_check():
+   * @self: a mailbox
+   *
+   * Queues a mail check on @self, or replaces an already queued check.
+   *
+   * This function is not thread-safe. It is only called from main
+   * loop callbacks (hence always from the same thread).
+   **/
+  protected void
+    queue_check (self)
+  {
+    if (! selfp->queue_check_id)
+      selfp->queue_check_id = gdk_threads_add_idle(self_queue_check_cb, self);
+  }
+
+  private gboolean
+    queue_check_cb (gpointer data)
+  {
+    Self *self = data;
+
+    mn_mailbox_check(MN_MAILBOX(self));
+
+    selfp->queue_check_id = 0;
+    return FALSE;		/* remove source */
+  }
+
+  override (MN:Mailbox) void
+    check (MNMailbox *mailbox)
+  {
+    Self *self = SELF(mailbox);
+    CheckInfo *info;
+
+    PARENT_HANDLER(mailbox);
+
+    mn_mailbox_set_error(mailbox, NULL);
+
+    if (++selfp->check_unique_id == 0)
+      ++selfp->check_unique_id;
+
+    info = g_new(CheckInfo, 1);
+    info->self = g_object_ref(self);
+    info->check_id = selfp->check_unique_id;
+
+    g_atomic_int_set(&selfp->check_id, info->check_id);
+
+    mn_thread_create((GThreadFunc) self_check_thread_cb, info);
+  }
+
+  private void
+    check_thread_cb (CheckInfo *info)
+  {
+    Self *self = info->self;
+
+    self_reentrant_check(self, info->check_id);
+
+    g_atomic_int_compare_and_exchange(&selfp->check_id, info->check_id, 0);
+
+    GDK_THREADS_ENTER();
+
+    g_object_unref(self);
+
+    gdk_flush();
+    GDK_THREADS_LEAVE();
+
+    g_free(info);
+  }
+
+  virtual private void
+    reentrant_check (self, int check_id (check != 0));
+
+  protected gboolean
+    check_aborted (self, int check_id (check != 0))
+  {
+    return g_atomic_int_get(&selfp->check_id) != check_id;
+  }
+}

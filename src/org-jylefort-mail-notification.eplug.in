@@ -1,0 +1,23 @@
+<e-plugin-list>
+  <e-plugin
+    id="org.jylefort.evolution.mail-notification"
+    type="shlib"
+    name="Jean-Yves Lefort's Mail Notification"
+    location="@evolution-plugin-dir@/liborg-jylefort-mail-notification.so">
+
+    <description>Provides Evolution mailbox support for Mail Notification.</description>
+    <author name="Jean-Yves Lefort" email="jylefort@brutele.be"/>
+
+    <hook class="org.gnome.evolution.mail.events:1.0">
+      <event id="folder.changed"
+	handle="org_jylefort_mail_notification_folder_changed"
+	target="folder"/>
+    </hook>
+
+    <hook class="org.gnome.evolution.mail.events:1.0">
+      <event id="message.reading"
+	handle="org_jylefort_mail_notification_message_reading"
+	target="message"/>
+    </hook>
+  </e-plugin>
+</e-plugin-list>

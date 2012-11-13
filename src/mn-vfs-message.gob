@@ -1,0 +1,107 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include <libgnomevfs/gnome-vfs.h>
+#include "mn-message.h"
+#include "mn-decls.h"
+%}
+
+%{
+#include "mn-vfs-mailbox-backend.h"
+#include "mn-message-mime.h"
+#include "mn-util.h"
+%}
+
+class MN:VFS:Message from MN:Message (abstract)
+{
+  /* can only be NULL during construction (see new()) */
+  protected GnomeVFSURI *vfs_uri unrefwith gnome_vfs_uri_unref;
+  property POINTER vfs_uri (flags = CONSTRUCT_ONLY, type = GnomeVFSURI *)
+    set
+    {
+      GnomeVFSURI *uri;
+
+      g_assert(self->vfs_uri == NULL);
+
+      uri = g_value_get_pointer(VAL);
+      if (uri)
+	self->vfs_uri = gnome_vfs_uri_ref(uri);
+    }
+    get
+    {
+      g_value_set_pointer(VAL, self->vfs_uri != NULL ? gnome_vfs_uri_ref(self->vfs_uri) : NULL);
+    };
+
+  public MNVFSMessage *
+    new (GType type,
+	 MN:VFS:Mailbox:Backend *backend (check null type),
+	 const char *mid,
+	 GnomeVFSURI *dir_uri (check null),
+	 const char *filename (check null),
+	 MNMessageFlags flags,
+	 gboolean handle_status,
+	 GError **err)
+  {
+    GnomeVFSURI *message_uri;
+    MNVFSMessage *message;
+
+    message_uri = gnome_vfs_uri_append_file_name(dir_uri, filename);
+
+    message = MN_VFS_MESSAGE(mn_message_new_from_uri_full(type,
+							  MN_MAILBOX(MN_VFS_MAILBOX_BACKEND(backend)->mailbox),
+							  mid,
+							  message_uri,
+							  flags,
+							  handle_status,
+							  err));
+
+    if (message)
+      message->vfs_uri = gnome_vfs_uri_ref(message_uri);
+
+    gnome_vfs_uri_unref(message_uri);
+
+    return message;
+  }
+
+  public MNVFSMessage *
+    new_from_message (MN:VFS:Message *message (check null type),
+		      GnomeVFSURI *dir_uri (check null),
+		      const char *filename (check null),
+		      MNMessageFlags flags)
+  {
+    GnomeVFSURI *message_uri;
+    char *message_text_uri;
+    MNVFSMessage *new_message;
+
+    message_uri = gnome_vfs_uri_append_file_name(dir_uri, filename);
+    message_text_uri = gnome_vfs_uri_to_string(message_uri, GNOME_VFS_URI_HIDE_NONE);
+
+    new_message = mn_g_object_clone(message,
+				    MN_MESSAGE_PROP_URI((char *) message_text_uri),
+				    MN_MESSAGE_PROP_FLAGS(flags),
+				    MN_VFS_MESSAGE_PROP_VFS_URI(message_uri),
+				    NULL);
+
+    gnome_vfs_uri_unref(message_uri);
+    g_free(message_text_uri);
+
+    return new_message;
+  }
+}

@@ -1,0 +1,319 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include <gtk/gtk.h>
+#include "mn-authenticated-mailbox-properties.h"
+#include "mn-pi-mailbox.h"
+%}
+
+%{
+#include <glib/gi18n.h>
+#include "mn-mailbox-properties-dialog.h"
+#include "mn-mailbox-properties-dialog-private.h"
+#include "mn-mailbox-properties-private.h"
+#include "mn-authenticated-mailbox-properties-private.h"
+#include "mn-auth-combo-box.h"
+#include "mn-util.h"
+#include "mn-stock.h"
+%}
+
+class MN:PI:Mailbox:Properties from MN:Authenticated:Mailbox:Properties (abstract)
+{
+  protected GtkWidget *server_entry;
+  protected GtkWidget *connection_page unrefwith g_object_unref;
+  protected GtkSizeGroup *connection_size_group = {gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL)} unrefwith g_object_unref;
+  protected GtkWidget *conn_radio[MN_PI_MAILBOX_N_CONNECTION_TYPES];
+  protected GtkWidget *port_spin[MN_PI_MAILBOX_N_CONNECTION_TYPES];
+  protected GtkWidget *auth_combo;
+
+  property BOOLEAN complete (override)
+    get
+    {
+      g_value_set_boolean(VAL, self_is_complete(self));
+    };
+
+  class_init (class)
+  {
+    MNMailboxPropertiesClass *p_class = MN_MAILBOX_PROPERTIES_CLASS(class);
+
+    p_class->stock_id = MN_STOCK_REMOTE;
+  }
+
+  init (self)
+  {
+    MNMailboxProperties *properties = MN_MAILBOX_PROPERTIES(self);
+    MNAuthenticatedMailboxProperties *auth = MN_AUTHENTICATED_MAILBOX_PROPERTIES(self);
+    GtkWidget *hbox;
+    GtkWidget *label;
+    GtkWidget *type_section;
+    GtkWidget *type_vbox;
+    int i;
+    static const struct
+    {
+      MNPIMailboxConnectionType	type;
+      const char		*mnemonic;
+    } connection_types[] = {
+      { MN_PI_MAILBOX_CONNECTION_TYPE_NORMAL,		N_("_Standard")			},
+      { MN_PI_MAILBOX_CONNECTION_TYPE_INBAND_SSL,	N_("In-_band SSL/TLS")		},
+      { MN_PI_MAILBOX_CONNECTION_TYPE_SSL,		N_("SSL/TLS on s_eparate port")	}
+    };
+
+    hbox = mn_authenticated_mailbox_properties_field_new(auth,
+							 _("_Server:"),
+							 &label,
+							 &self->server_entry);
+
+    gtk_box_pack_start(GTK_BOX(auth->account_vbox), hbox, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(auth->account_vbox), auth->username_vbox, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(auth->account_vbox), auth->password_vbox, FALSE, FALSE, 0);
+
+    properties->entries = mn_g_slist_append_elements(properties->entries,
+						     self->server_entry,
+						     auth->username_entry,
+						     auth->password_entry,
+						     NULL);
+
+    self->connection_page = gtk_vbox_new(FALSE, 18);
+    gtk_container_set_border_width(GTK_CONTAINER(self->connection_page), 12);
+    mn_mailbox_properties_dialog_set_help_section(self->connection_page, "mailbox-properties-connection");
+    g_object_ref_sink(self->connection_page);
+
+    /* translators: header capitalization */
+    type_section = mn_hig_section_new_with_box(_("Connection Type"), NULL, &type_vbox);
+    gtk_box_pack_start(GTK_BOX(self->connection_page), type_section, FALSE, FALSE, 0);
+    gtk_widget_show(type_section);
+
+    for (i = 0; i < MN_PI_MAILBOX_N_CONNECTION_TYPES; i++)
+      self_add_connection_type(self,
+			       GTK_BOX(type_vbox),
+			       connection_types[i].type,
+			       _(connection_types[i].mnemonic));
+
+#if ! WITH_SSL
+    gtk_widget_set_sensitive(self->conn_radio[MN_PI_MAILBOX_CONNECTION_TYPE_INBAND_SSL], FALSE);
+    gtk_widget_set_sensitive(self->conn_radio[MN_PI_MAILBOX_CONNECTION_TYPE_SSL], FALSE);
+#endif
+
+    /* by default, standard is enabled */
+    gtk_widget_set_sensitive(self->port_spin[MN_PI_MAILBOX_CONNECTION_TYPE_INBAND_SSL], FALSE);
+    gtk_widget_set_sensitive(self->port_spin[MN_PI_MAILBOX_CONNECTION_TYPE_SSL], FALSE);
+
+    self_add_authentication(self);
+
+    gtk_widget_show_all(self->connection_page);
+
+    g_object_connect(self->server_entry,
+		     "swapped-signal::changed", mn_mailbox_properties_notify_complete, self,
+		     "swapped-signal::changed", mn_mailbox_properties_notify_default_name, self,
+		     NULL);
+
+    g_object_connect(auth->username_entry,
+		     "swapped-signal::changed", mn_mailbox_properties_notify_complete, self,
+		     "swapped-signal::changed", mn_mailbox_properties_notify_default_name, self,
+		     NULL);
+  }
+
+  private void
+    add_connection_type (self,
+			 Gtk:Box *type_vbox (check null),
+			 MNPIMailboxConnectionType type,
+			 const char *mnemonic (check null))
+  {
+    GtkWidget *hbox;
+    GtkWidget *port_label;
+
+    self->conn_radio[type] = type == 0
+      ? gtk_radio_button_new_with_mnemonic(NULL, mnemonic)
+      : gtk_radio_button_new_with_mnemonic_from_widget(GTK_RADIO_BUTTON(self->conn_radio[0]), mnemonic);
+
+    port_label = gtk_label_new(_("Port:"));
+
+    self->port_spin[type] = gtk_spin_button_new_with_range(0, 0xFFFF, 1);
+    gtk_entry_set_activates_default(GTK_ENTRY(self->port_spin[type]), TRUE);
+    gtk_spin_button_set_numeric(GTK_SPIN_BUTTON(self->port_spin[type]), TRUE);
+
+    hbox = gtk_hbox_new(FALSE, 12);
+    gtk_box_pack_start(GTK_BOX(hbox), self->conn_radio[type], FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), port_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), self->port_spin[type], FALSE, FALSE, 0);
+    gtk_box_pack_start(type_vbox, hbox, FALSE, FALSE, 0);
+    gtk_widget_show_all(hbox);
+
+    gtk_size_group_add_widget(self->connection_size_group, self->conn_radio[type]);
+
+    g_signal_connect(self->conn_radio[type], "toggled", G_CALLBACK(self_radio_toggled_h), self);
+  }
+
+  private void
+    add_authentication (self)
+  {
+    GtkWidget *section;
+    GtkWidget *vbox;
+    GtkWidget *hbox;
+    GtkWidget *label;
+
+    /* translators: header capitalization */
+    section = mn_hig_section_new_with_box(_("Authentication"), NULL, &vbox);
+    gtk_box_pack_start(GTK_BOX(self->connection_page), section, FALSE, FALSE, 0);
+
+    hbox = gtk_hbox_new(FALSE, 12);
+    label = gtk_label_new_with_mnemonic(_("_Mechanism:"));
+    gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
+
+    self->auth_combo = mn_auth_combo_box_new();
+    gtk_label_set_mnemonic_widget(GTK_LABEL(label), self->auth_combo);
+
+    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), self->auth_combo, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+
+    gtk_size_group_add_widget(self->connection_size_group, label);
+  }
+
+  private void
+    radio_toggled_h (Gtk:Toggle:Button *togglebutton (check null type),
+		     gpointer user_data (check null))
+  {
+    Self *self = user_data;
+    int i;
+
+    for (i = 0; i < MN_PI_MAILBOX_N_CONNECTION_TYPES; i++)
+      gtk_widget_set_sensitive(self->port_spin[i], GTK_WIDGET_SENSITIVE(self->conn_radio[i]) && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(self->conn_radio[i])));
+
+    g_object_notify(G_OBJECT(self), "complete");
+  }
+
+  override (MN:Mailbox:Properties) void
+    activate (MNMailboxProperties *properties)
+  {
+    Self *self = SELF(properties);
+
+    PARENT_HANDLER(properties);
+
+    gtk_notebook_insert_page(GTK_NOTEBOOK(MN_MAILBOX_PROPERTIES_DIALOG(properties->dialog)->notebook), self->connection_page, NULL, 1);
+    gtk_notebook_set_tab_label_text(GTK_NOTEBOOK(MN_MAILBOX_PROPERTIES_DIALOG(properties->dialog)->notebook), self->connection_page, _("Connection"));
+  }
+
+  override (MN:Mailbox:Properties) void
+    deactivate (MNMailboxProperties *properties)
+  {
+    PARENT_HANDLER(properties);
+
+    gtk_notebook_remove_page(GTK_NOTEBOOK(MN_MAILBOX_PROPERTIES_DIALOG(properties->dialog)->notebook), 1);
+  }
+
+  override (MN:Mailbox:Properties) void
+    set_mailbox (MNMailboxProperties *properties, MNMailbox *mailbox)
+  {
+    Self *self = SELF(properties);
+    MNPIMailbox *pi_mailbox = MN_PI_MAILBOX(mailbox);
+
+    PARENT_HANDLER(properties, mailbox);
+
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->conn_radio[pi_mailbox->connection_type]), TRUE);
+    mn_auth_combo_box_set_active_mechanism(MN_AUTH_COMBO_BOX(self->auth_combo), pi_mailbox->authmech);
+    gtk_entry_set_text(GTK_ENTRY(self->server_entry), pi_mailbox->hostname);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(self->port_spin[pi_mailbox->connection_type]), pi_mailbox->runtime_port);
+  }
+
+  override (MN:Mailbox:Properties) MNMailbox *
+    get_mailbox (MNMailboxProperties *properties)
+  {
+    MNMailbox *mailbox;
+    MNPIMailboxConnectionType connection_type;
+    char *authmech;
+    const char *server;
+    int port;
+
+    mailbox = PARENT_HANDLER(properties);
+
+    self_get_contents(SELF(properties),
+		      &connection_type,
+		      &authmech,
+		      &server,
+		      &port);
+
+    g_object_set(mailbox,
+		 MN_PI_MAILBOX_PROP_CONNECTION_TYPE(connection_type),
+		 MN_PI_MAILBOX_PROP_AUTHMECH(authmech),
+		 MN_PI_MAILBOX_PROP_HOSTNAME((char *) server),
+		 MN_PI_MAILBOX_PROP_PORT(port),
+		 NULL);
+
+    g_free(authmech);
+
+    return mailbox;
+  }
+
+  protected void
+    get_contents (self,
+		  MNPIMailboxConnectionType *connection_type,
+		  char **authmech,
+		  const char **server,
+		  int *port)
+  {
+    MNPIMailboxConnectionType _connection_type;
+
+    if (connection_type || port)
+      {
+	int i;
+
+	_connection_type = -1;
+
+	for (i = 0; i < MN_PI_MAILBOX_N_CONNECTION_TYPES; i++)
+	  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(self->conn_radio[i])))
+	    {
+	      _connection_type = i;
+	      break;
+	    }
+
+	g_assert(_connection_type != -1);
+      }
+
+    if (connection_type)
+      *connection_type = _connection_type;
+    if (authmech)
+      *authmech = mn_auth_combo_box_get_active_mechanism(MN_AUTH_COMBO_BOX(self->auth_combo));
+    if (server)
+      *server = gtk_entry_get_text(GTK_ENTRY(self->server_entry));
+    if (port)
+      *port = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(self->port_spin[_connection_type]));
+  }
+
+  protected gboolean
+    is_complete (self)
+  {
+    const char *server;
+
+    if (! mn_authenticated_mailbox_properties_is_complete(MN_AUTHENTICATED_MAILBOX_PROPERTIES(self)))
+      return FALSE;
+
+    server = gtk_entry_get_text(GTK_ENTRY(self->server_entry));
+    if (! *server)
+      return FALSE;
+
+#if ! WITH_SSL
+    if (! gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(MN_PI_MAILBOX_PROPERTIES(self)->conn_radio[MN_PI_MAILBOX_CONNECTION_TYPE_NORMAL])))
+      return FALSE;
+#endif /* WITH_SSL */
+
+    return TRUE;
+  }
+}

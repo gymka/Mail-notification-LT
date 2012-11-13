@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+_Name=Mail Notification
+Icon=mail-notification
+_Comment=Get notified when new mail arrives
+Type=Application
+Categories=GNOME;GTK;Network;Email;
+Exec=mail-notification --sm-disable
+Terminal=false
+StartupNotify=true
+X-GNOME-DocPath=mail-notification/mail-notification.xml

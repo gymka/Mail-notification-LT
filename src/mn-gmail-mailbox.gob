@@ -1,0 +1,403 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-authenticated-mailbox.h"
+%}
+
+%privateheader{
+#include <libgnomevfs/gnome-vfs.h>
+%}
+
+%{
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#include <glib/gi18n.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include "mn-mailbox-private.h"
+#include "mn-authenticated-mailbox-private.h"
+#include "mn-vfs.h"
+#include "mn-stock.h"
+#include "mn-message.h"
+#include "mn-util.h"
+%}
+
+class MN:Gmail:Mailbox from MN:Authenticated:Mailbox
+{
+  public char *location destroywith g_free;
+  property STRING location (link, flags = CONSTRUCT
+			    | MN_MAILBOX_PARAM_LOAD_SAVE
+			    | MN_MAILBOX_PARAM_REQUIRED,
+			    default_value = "https://mail.google.com/mail/feed/atom");
+
+  public char *label destroywith g_free;
+  property STRING label (link, flags = MN_MAILBOX_PARAM_LOAD_SAVE);
+
+  private GnomeVFSURI *uri unrefwith gnome_vfs_uri_unref;
+
+  class_init (class)
+  {
+    MN_MAILBOX_CLASS(class)->type = "gmail";
+
+    /* 5 minutes is a good default */
+    MN_MAILBOX_CLASS(class)->default_check_delay = 60 * 5;
+  }
+
+  init (self)
+  {
+    mn_mailbox_set_format(MN_MAILBOX(self), "Gmail");
+    mn_mailbox_set_stock_id(MN_MAILBOX(self), MN_STOCK_GMAIL);
+  }
+
+  override (MN:Mailbox) void
+    seal (MNMailbox *mailbox)
+  {
+    MNAuthenticatedMailbox *auth_mailbox = MN_AUTHENTICATED_MAILBOX(mailbox);
+    Self *self = SELF(mailbox);
+    GnomeVFSURI *uri;
+
+    PARENT_HANDLER(mailbox);
+
+    if (! mailbox->runtime_name)
+      mailbox->runtime_name = self_build_name(auth_mailbox->username, self->label);
+
+    uri = self_build_uri(self);
+    if (uri)
+      {
+	/*
+	 * Use keyring attributes that are compatible with what
+	 * GnomeVFS uses. This allows the password entered by the user
+	 * at the GnomeVFS password prompt to be recognized by Mail
+	 * Notification and displayed in the mailbox properties
+	 * dialog.
+	 */
+	auth_mailbox->keyring_server = g_strdup(gnome_vfs_uri_get_host_name(uri));
+	auth_mailbox->keyring_protocol = g_strdup("http");
+	auth_mailbox->keyring_authtype = g_strdup("basic");
+	auth_mailbox->keyring_port = gnome_vfs_uri_get_host_port(uri);
+	if (auth_mailbox->keyring_port == 0)
+	  {
+	    const char *scheme;
+
+	    scheme = gnome_vfs_uri_get_scheme(uri);
+	    if (! strcmp(scheme, "http"))
+	      auth_mailbox->keyring_port = 80;
+	    else if (! strcmp(scheme, "https"))
+	      auth_mailbox->keyring_port = 443;
+	  }
+
+	gnome_vfs_uri_unref(uri);
+      }
+    else
+      /* fallback */
+      auth_mailbox->keyring_domain = g_strdup("gmail.com");
+  }
+
+  private GnomeVFSURI *
+    build_uri (self)
+  {
+    GnomeVFSURI *uri;
+
+    uri = gnome_vfs_uri_new(self->location);
+    if (uri)
+      {
+	GnomeVFSURI *new_uri;
+
+	if (self->label)
+	  {
+	    new_uri = gnome_vfs_uri_append_file_name(uri, self->label);
+	    gnome_vfs_uri_unref(uri);
+	    uri = new_uri;
+	  }
+      }
+
+    return uri;
+  }
+
+  override (MN:Authenticated:Mailbox) void
+    authenticated_check (MNAuthenticatedMailbox *mailbox)
+  {
+    Self *self = SELF(mailbox);
+    GnomeVFSResult result;
+    char *atom;
+    int atom_size;
+    xmlDoc *doc;
+    xmlNode *node;
+
+    PARENT_HANDLER(mailbox);
+
+    if (! selfp->uri)
+      {
+	selfp->uri = self_build_uri(self);
+	if (! selfp->uri)
+	  {
+	    GDK_THREADS_ENTER();
+
+	    mn_mailbox_set_error(MN_MAILBOX(self), _("invalid feed location"));
+	    /* error is not recoverable, disable the mailbox */
+	    mn_mailbox_set_poll(MN_MAILBOX(self), FALSE);
+
+	    gdk_flush();
+	    GDK_THREADS_LEAVE();
+
+	    return;
+	  }
+
+	/*
+	 * Obtain the password from the keyring but do not prompt
+	 * (GnomeVFS will prompt on our behalf if the password is
+	 * missing).
+	 */
+	mn_authenticated_mailbox_fill_password(mailbox, FALSE);
+
+	gnome_vfs_uri_set_user_name(selfp->uri, mailbox->username);
+	gnome_vfs_uri_set_password(selfp->uri, mailbox->runtime_password);
+      }
+
+    mn_mailbox_notice(MN_MAILBOX(self), _("retrieving feed from %s"), self->location);
+
+    result = mn_vfs_read_entire_file_uri(selfp->uri, &atom_size, &atom);
+    if (result != GNOME_VFS_OK)
+      {
+	GDK_THREADS_ENTER();
+
+	mn_mailbox_set_error(MN_MAILBOX(self), _("unable to retrieve feed: %s"), gnome_vfs_result_to_string(result));
+
+	gdk_flush();
+	GDK_THREADS_LEAVE();
+
+	return;
+      }
+
+    mn_mailbox_notice(MN_MAILBOX(self),
+		      ngettext("feed retrieved successfully (%i byte)",
+			       "feed retrieved successfully (%i bytes)",
+			       atom_size),
+		      atom_size);
+
+    doc = xmlParseMemory(atom, atom_size);
+    g_free(atom);
+
+    if (! doc)
+      {
+	GDK_THREADS_ENTER();
+
+	mn_mailbox_set_error(MN_MAILBOX(self), _("unable to parse feed"));
+
+	gdk_flush();
+	GDK_THREADS_LEAVE();
+
+	return;
+      }
+
+    node = xmlDocGetRootElement(doc);
+    if (node && ! strcmp(node->name, "feed"))
+      {
+	GSList *messages = NULL;
+
+	for (node = node->children; node; node = node->next)
+	  if (node->type == XML_ELEMENT_NODE && ! strcmp(node->name, "entry"))
+	    {
+	      time_t sent_time;
+	      char *id;
+	      char *from;
+	      char *subject;
+	      char *url;
+
+	      self_parse_entry(node, &sent_time, &id, &from, &subject, &url);
+
+	      messages = g_slist_prepend(messages, mn_message_new(MN_MAILBOX(self),
+								  sent_time,
+								  id,
+								  NULL,
+								  from,
+								  subject,
+								  url,
+								  MN_MESSAGE_NEW));
+
+	      g_free(id);
+	      g_free(from);
+	      g_free(subject);
+	      g_free(url);
+	    }
+
+	GDK_THREADS_ENTER();
+
+	mn_mailbox_set_messages(MN_MAILBOX(self), messages);
+	mn_g_object_slist_free(messages);
+
+	gdk_flush();
+	GDK_THREADS_LEAVE();
+      }
+    else
+      {
+	GDK_THREADS_ENTER();
+
+	mn_mailbox_set_error(MN_MAILBOX(self), _("unable to parse feed"));
+
+	gdk_flush();
+	GDK_THREADS_LEAVE();
+      }
+
+    xmlFreeDoc(doc);
+  }
+
+  private void
+    parse_entry (xmlNode *node (check null),
+		 time_t *sent_time (check null),
+		 char **id (check null),
+		 char **from (check null),
+		 char **subject (check null),
+		 char **url (check null))
+  {
+    *sent_time = 0;
+    *id = NULL;
+    *from = NULL;
+    *subject = NULL;
+    *url = NULL;
+
+    for (node = node->children; node; node = node->next)
+      if (node->type == XML_ELEMENT_NODE)
+	{
+	  if (! strcmp(node->name, "title"))
+	    {
+	      g_free(*subject);
+	      *subject = xmlNodeGetContent(node);
+	    }
+	  else if (! strcmp(node->name, "id"))
+	    {
+	      g_free(*id);
+	      *id = xmlNodeGetContent(node);
+	    }
+	  else if (! strcmp(node->name, "author"))
+	    {
+	      g_free(*from);
+	      *from = self_parse_author(node);
+	    }
+	  else if (! strcmp(node->name, "link"))
+	    {
+	      g_free(*url);
+	      *url = xmlGetProp(node, "href");
+	    }
+	  else if (! strcmp(node->name, "issued"))
+	    {
+	      char *w3c_datetime;
+
+	      w3c_datetime = xmlNodeGetContent(node);
+	      if (w3c_datetime)
+		{
+		  *sent_time = self_parse_date(w3c_datetime);
+		  g_free(w3c_datetime);
+		}
+	    }
+	}
+  }
+
+  private char *
+    parse_author (xmlNode *node (check null))
+  {
+    char *from;
+    char *name = NULL;
+    char *email = NULL;
+
+    for (node = node->children; node; node = node->next)
+      if (node->type == XML_ELEMENT_NODE)
+	{
+	  if (! strcmp(node->name, "name"))
+	    {
+	      g_free(name);
+	      name = xmlNodeGetContent(node);
+	    }
+	  else if (! strcmp(node->name, "email"))
+	    {
+	      g_free(email);
+	      email = xmlNodeGetContent(node);
+	    }
+	}
+
+    from = name && email
+      ? g_strdup_printf("%s <%s>", name, email)
+      : g_strdup(name ? name : email);
+
+    g_free(name);
+    g_free(email);
+
+    return from;
+  }
+
+  private time_t
+    parse_date (const char *w3c_datetime (check null))
+  {
+#ifdef HAVE_TIMEGM
+    time_t t = 0;
+    char year[5];
+    char month[3];
+    char day[3];
+    char hour[3];
+    char minute[3];
+    char second[3];
+
+    if (sscanf(w3c_datetime, "%4s-%2s-%2sT%2s:%2s:%2sZ", year, month, day, hour, minute, second) == 6
+	&& mn_str_isnumeric(year)
+	&& mn_str_isnumeric(month)
+	&& mn_str_isnumeric(day)
+	&& mn_str_isnumeric(hour)
+	&& mn_str_isnumeric(minute)
+	&& mn_str_isnumeric(second))
+      {
+	struct tm tm = { 0 };
+
+	tm.tm_sec = atoi(second);
+	tm.tm_min = atoi(minute);
+	tm.tm_hour = atoi(hour);
+	tm.tm_mday = atoi(day);
+	tm.tm_mon = atoi(month) - 1;
+	tm.tm_year = atoi(year) - 1900;
+
+	t = timegm(&tm);
+	if (t == -1)
+	  t = 0;
+      }
+
+    return t;
+#else
+    return 0;
+#endif
+  }
+
+  public char *
+    build_name (const char *username (check null), const char *label)
+  {
+    GString *name;
+
+    name = g_string_new(NULL);
+
+    if (g_str_has_suffix(username, "@gmail.com"))
+      g_string_append(name, username);
+    else
+      g_string_append_printf(name, "%s@gmail.com", username);
+
+    if (label)
+      g_string_append_printf(name, "/%s", label);
+
+    return g_string_free(name, FALSE);
+  }
+}

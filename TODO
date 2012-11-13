@@ -1,0 +1,6 @@
+* List the available IMAP folders in the mailbox properties dialog,
+  and/or allow to check all subscribed folders
+
+* The "delete" message action could also be implemented with little
+  effort for Sylpheed mailboxes (other mailbox types would
+  require more work).

@@ -1,0 +1,252 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-vfs-message.h"
+%}
+
+%privateheader{
+#include <gtk/gtk.h>
+%}
+
+%{
+#include <glib/gi18n.h>
+#include "mn-vfs-mailbox.h"
+#include "mn-vfs.h"
+#include "mn-util.h"
+#include "mn-message-private.h"
+#include "mn-shell.h"
+
+#define DELETE_DIALOG_MESSAGE	"mn-maildir-message-delete-dialog-message"
+%}
+
+class MN:Maildir:Message from MN:VFS:Message
+{
+  private int
+    flags_sort_cb (const void *a, const void *b)
+  {
+    char ca = *((char *) a);
+    char cb = *((char *) b);
+
+    /* sort flags using ASCII order, see http://cr.yp.to/proto/maildir.html */
+
+    return ca - cb;
+  }
+
+  override (MN:Message) void
+    builtin_mark_as_read (MNMessage *message, MNMessageActionRequest *request)
+  {
+    mn_message_perform_action_in_thread(request, self_builtin_mark_as_read_cb, NULL);
+  }
+
+  private GError *
+    builtin_mark_as_read_cb (MNMessage *message, gpointer data)
+  {
+    MNVFSMessage *vmessage = MN_VFS_MESSAGE(message);
+    char *old_flags;
+    char *old_filename;
+    char *new_filename;
+    GnomeVFSURI *dir_uri;
+    GnomeVFSURI *new_uri;
+    GError *err = NULL;
+
+    /* http://cr.yp.to/proto/maildir.html */
+
+    old_filename = gnome_vfs_uri_extract_short_name(vmessage->vfs_uri);
+
+    old_flags = strrchr(old_filename, ',');
+    if (old_flags)
+      {
+	char *new_flags;
+	int old_len;
+	char *base_filename;
+
+	/* append the S (seen) flag */
+
+	old_flags++;
+	g_assert(strchr(old_flags, 'S') == NULL);
+
+	old_len = strlen(old_flags);
+	new_flags = g_new(char, old_len + 2); /* + space for S and nul */
+	memcpy(new_flags, old_flags, old_len);
+	new_flags[old_len] = 'S';
+	new_flags[old_len + 1] = 0;
+	qsort(new_flags, old_len + 1, sizeof(char), self_flags_sort_cb);
+
+	base_filename = g_strndup(old_filename, old_flags - old_filename - 1);
+	new_filename = g_strdup_printf("%s,%s", base_filename, new_flags);
+	g_free(base_filename);
+	g_free(new_flags);
+      }
+    else
+      new_filename = g_strconcat(old_filename, ":2,S", NULL);
+
+    g_free(old_filename);
+
+    dir_uri = gnome_vfs_uri_append_path(MN_VFS_MAILBOX(message->mailbox)->vfs_uri, "cur");
+    new_uri = gnome_vfs_uri_append_file_name(dir_uri, new_filename);
+    gnome_vfs_uri_unref(dir_uri);
+    g_free(new_filename);
+
+    mn_vfs_result_to_g_error(gnome_vfs_move_uri(vmessage->vfs_uri, new_uri, TRUE), &err);
+    gnome_vfs_uri_unref(new_uri);
+
+    return err;
+  }
+
+  /* returns NULL if not supported for the volume where the file resides */
+  private GnomeVFSURI *
+    get_trash_uri (self)
+  {
+    MNVFSMessage *vmessage = MN_VFS_MESSAGE(self);
+    GnomeVFSURI *trash_uri;
+
+    /*
+     * Do what is advised in the gnome_vfs_find_directory()
+     * documentation: first pass find_if_needed, then create_if_needed.
+     */
+
+    if (gnome_vfs_find_directory(vmessage->vfs_uri,
+				 GNOME_VFS_DIRECTORY_KIND_TRASH,
+				 &trash_uri,
+				 FALSE,
+				 TRUE,
+				 0) == GNOME_VFS_OK)
+      return trash_uri;
+
+    if (gnome_vfs_find_directory(vmessage->vfs_uri,
+				 GNOME_VFS_DIRECTORY_KIND_TRASH,
+				 &trash_uri,
+				 TRUE,
+				 FALSE,
+				 S_IRUSR | S_IWUSR | S_IXUSR) == GNOME_VFS_OK)
+      return trash_uri;
+
+    return NULL;
+  }
+
+  [G_GNUC_PRINTF(2, 3)]
+  private GError *
+    delete_with_prompt (self, const char *format (check null), ...)
+  {
+    GtkWidget *dialog;
+    char *prompt;
+    int response;
+
+    MN_STRDUP_VPRINTF(prompt, format);
+
+    GDK_THREADS_ENTER();
+
+    dialog = mn_alert_dialog_new(NULL,
+				 GTK_MESSAGE_WARNING,
+				 0,
+				 _("Delete message?"),
+				 prompt);
+    g_free(prompt);
+
+    gtk_dialog_add_buttons(GTK_DIALOG(dialog),
+			   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			   GTK_STOCK_DELETE, GTK_RESPONSE_OK,
+			   NULL);
+
+    g_object_set_data(G_OBJECT(dialog), DELETE_DIALOG_MESSAGE, self);
+
+    mn_g_object_connect(dialog, mn_shell->mailboxes,
+			"signal::messages-changed", self_delete_messages_changed_h, dialog,
+			NULL);
+
+    response = mn_dialog_run_nonmodal(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+
+    gdk_flush();
+    GDK_THREADS_LEAVE();
+
+    if (response == GTK_RESPONSE_OK)
+      {
+	GError *err = NULL;
+
+	mn_vfs_result_to_g_error(gnome_vfs_unlink_from_uri(MN_VFS_MESSAGE(self)->vfs_uri), &err);
+
+	return err;
+      }
+    else
+      return g_error_new(MN_MESSAGE_ACTION_ERROR, MN_MESSAGE_ACTION_ERROR_CANCELLED, "cancelled");
+  }
+
+  private void
+    delete_messages_changed_h (MNMailboxes *mailboxes,
+			       gboolean has_new,
+			       gpointer user_data)
+  {
+    GtkWidget *dialog = user_data;
+    Self *self;
+
+    self = g_object_get_data(G_OBJECT(dialog), DELETE_DIALOG_MESSAGE);
+
+    /* if the message was removed, close the dialog */
+    if (! g_hash_table_lookup(mn_shell->mailboxes->messages_hash_table, MN_MESSAGE(self)->id))
+      gtk_dialog_response(GTK_DIALOG(dialog), GTK_RESPONSE_CANCEL);
+  }
+
+  override (MN:Message) void
+    builtin_delete (MNMessage *message, MNMessageActionRequest *request)
+  {
+    mn_message_perform_action_in_thread(request, self_builtin_delete_cb, NULL);
+  }
+
+  private GError *
+    builtin_delete_cb (MNMessage *message, gpointer data)
+  {
+    Self *self = SELF(message);
+    MNVFSMessage *vmessage = MN_VFS_MESSAGE(message);
+    GnomeVFSURI *trash_uri;
+    char *filename;
+    GnomeVFSURI *dest_uri;
+    GnomeVFSResult result;
+
+    trash_uri = self_get_trash_uri(self);
+    if (! trash_uri)
+      return self_delete_with_prompt(self, _("The message cannot be moved to the trash. Permanently delete it?"));
+
+    filename = gnome_vfs_uri_extract_short_name(vmessage->vfs_uri);
+    dest_uri = gnome_vfs_uri_append_file_name(trash_uri, filename);
+    gnome_vfs_uri_unref(trash_uri);
+    g_free(filename);
+
+    /*
+     * Use gnome_vfs_xfer_uri() rather than gnome_vfs_move_uri(), in
+     * case the trash resides on a different file system than the
+     * message.
+     */
+    result = gnome_vfs_xfer_uri(vmessage->vfs_uri,
+				dest_uri,
+				GNOME_VFS_XFER_REMOVESOURCE
+				| GNOME_VFS_XFER_FOLLOW_LINKS,
+				GNOME_VFS_XFER_ERROR_MODE_ABORT,
+				GNOME_VFS_XFER_OVERWRITE_MODE_REPLACE,
+				NULL,
+				NULL);
+    gnome_vfs_uri_unref(dest_uri);
+
+    if (result == GNOME_VFS_OK)
+      return NULL;
+    else
+      return self_delete_with_prompt(self, _("The message could not be moved to the trash (%s). Permanently delete it?"), gnome_vfs_result_to_string(result));
+  }
+}

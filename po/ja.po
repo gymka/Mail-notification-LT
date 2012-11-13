@@ -1,0 +1,1656 @@
+# Japanese translations for mail-notification.
+# Copyright (C) 2003-2008 Jean-Yves Lefort.
+#
+# This file is distributed under the same license as the
+# mail-notification package.
+#
+# Hiroshi Hasebe <hhasebe@DVOI.COM>, 2006.
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: mail-notification 3.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-04-29 11:50+0900\n"
+"PO-Revision-Date: 2006-06-14 09:22+0200\n"
+"Last-Translator: Hiroshi Hasebe <hhasebe@DVOI.COM>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: data/GNOME_MailNotification.server.in.in.h:1
+msgid "Mail Notification automation"
+msgstr "メール着信通知の自動化"
+
+#: data/GNOME_MailNotification.server.in.in.h:2
+msgid "Mail Notification automation factory"
+msgstr "メール着信通知自動化ファクトリ"
+
+#: data/GNOME_MailNotification_Evolution.server.in.h:1
+msgid "Evolution folder tree control"
+msgstr "Evolutionフォルダツリーコントロール"
+
+#: data/GNOME_MailNotification_Evolution.server.in.h:2
+msgid "Evolution folder tree control factory"
+msgstr "Evolutionフォルダツリーコントロールファクトリ"
+
+#: data/GNOME_MailNotification_Evolution.server.in.h:3
+msgid "Mail Notification / Evolution glue"
+msgstr "メール着信通知 / Evolution glue"
+
+#: data/GNOME_MailNotification_Evolution.server.in.h:4
+msgid "Mail Notification / Evolution glue factory"
+msgstr "メール着信通知 / Evolution glueファクトリ"
+
+#: data/mail-notification-properties.desktop.in.h:1
+msgid "Configure Mail Notification"
+msgstr "メール着信通知の設定"
+
+#: data/mail-notification-properties.desktop.in.h:2
+#: data/mail-notification.desktop.in.h:2 src/mn-mail-icon.gob:227
+#: src/mn-main.c:132 src/mn-main.c:302 src/mn-main.c:318
+msgid "Mail Notification"
+msgstr "メール着信通知"
+
+#: data/mail-notification.desktop.in.h:1
+msgid "Get notified when new mail arrives"
+msgstr "メールの着信状況をお知らせします"
+
+#: data/mail-notification.schemas.in.h:1
+msgid "Always display an icon"
+msgstr "常にアイコンを表示"
+
+#: data/mail-notification.schemas.in.h:2
+msgid "Automatically close the mail summary popup"
+msgstr "新着メール一覧を自動的に閉じる"
+
+#: data/mail-notification.schemas.in.h:3
+msgid "Blink on errors"
+msgstr "エラー発生時にアイコンを点滅させる"
+
+#: data/mail-notification.schemas.in.h:4
+msgid "Click action"
+msgstr "クリック時の動作"
+
+#: data/mail-notification.schemas.in.h:5
+msgid "Display seen mail"
+msgstr "確認ずみのメールを表示"
+
+#: data/mail-notification.schemas.in.h:6
+msgid "Enable mail summary popup"
+msgstr "メール一覧をポップアップ"
+
+#: data/mail-notification.schemas.in.h:7
+msgid "Fingerprints of trusted X509 certificates"
+msgstr "X509証明書の電子指紋"
+
+#: data/mail-notification.schemas.in.h:8
+msgid "Height of properties dialog"
+msgstr "プロパティダイアログの高さ"
+
+#: data/mail-notification.schemas.in.h:9
+msgid "Mail read command"
+msgstr "メールリーダを起動するコマンド"
+
+#: data/mail-notification.schemas.in.h:10
+msgid "Mail summary popup contents font"
+msgstr "メール一覧ポップアップの本文フォント"
+
+#: data/mail-notification.schemas.in.h:11
+msgid "Mail summary popup fonts aspect source"
+msgstr "メール一覧ポップアップで使うフォントの選択基準"
+
+#: data/mail-notification.schemas.in.h:12
+msgid "Mail summary popup horizontal offset"
+msgstr "メール一覧ポップアップの水平オフセット"
+
+#: data/mail-notification.schemas.in.h:13
+msgid "Mail summary popup position"
+msgstr "メール一覧ポップアップの表示位置"
+
+#: data/mail-notification.schemas.in.h:14
+msgid "Mail summary popup title font"
+msgstr "メール一覧ポップアップのタイトルフォント"
+
+#: data/mail-notification.schemas.in.h:15
+msgid "Mail summary popup vertical offset"
+msgstr "メール一覧ポップアップの垂直オフセット"
+
+#: data/mail-notification.schemas.in.h:16
+msgid "Minutes to wait before closing the mail summary popup"
+msgstr "メール一覧ポップアップの表示時間"
+
+#: data/mail-notification.schemas.in.h:17
+msgid "New mail command"
+msgstr "新着メールコマンド"
+
+#: data/mail-notification.schemas.in.h:18
+msgid "Only display recent mail in mail summary popup"
+msgstr "メール一覧ポップアップで最近のメールのみ表示"
+
+#: data/mail-notification.schemas.in.h:19
+msgid "Run a command when all mail is read"
+msgstr "全メールを開封後にコマンドを実行"
+
+#: data/mail-notification.schemas.in.h:20
+msgid "Run a command when new mail arrives"
+msgstr "メール着信時にコマンドを実行"
+
+#: data/mail-notification.schemas.in.h:21
+msgid "Seconds to wait before closing the mail summary popup"
+msgstr "メール一覧ポップアップの表示時間"
+
+#: data/mail-notification.schemas.in.h:22
+msgid ""
+"The action to perform when the icon is clicked. Must be \"display-properties-"
+"dialog\", \"launch-mail-reader\" or \"update-mail-status\"."
+msgstr ""
+"アイコンがダブルクリックされたときの動作. \"display-main-window\", \"launch-"
+"mail-reader\" or \"update-mail-status\" のいずれかを指定."
+
+#: data/mail-notification.schemas.in.h:23
+msgid ""
+"The amount of time to wait before closing the mail summary popup (minutes "
+"part)."
+msgstr "メール一覧ポップアップの表示時間 (分で指定)"
+
+#: data/mail-notification.schemas.in.h:24
+msgid ""
+"The amount of time to wait before closing the mail summary popup (seconds "
+"part)."
+msgstr "メール一覧ポップアップの表示時間 (秒で指定)"
+
+#: data/mail-notification.schemas.in.h:25
+msgid ""
+"The aspect source of the mail summary popup fonts. Must be \"theme\" or "
+"\"custom\"."
+msgstr ""
+"メール一覧ポップアップで使うフォントの選択基準. \"theme\"もしくは\"custom"
+"\"を指定."
+
+#: data/mail-notification.schemas.in.h:26
+msgid "The command to run when all mail is read."
+msgstr "全メールを開封した後に実行するコマンド."
+
+#: data/mail-notification.schemas.in.h:27
+msgid "The command to run when new mail arrives."
+msgstr "メール着信時に実行するコマンド."
+
+#: data/mail-notification.schemas.in.h:28
+msgid "The custom font to use for the contents of the mail summary popup."
+msgstr "メール一覧ポップアップの本文表示に使用するカスタムフォント."
+
+#: data/mail-notification.schemas.in.h:29
+msgid "The custom font to use for the title of the mail summary popup."
+msgstr "メール一覧ポップアップのタイトル部に使用するカスタムフォント."
+
+#: data/mail-notification.schemas.in.h:30
+msgid "The height of the properties dialog in pixels."
+msgstr "プロパティダイアログの高さ (ピクセルで指定)."
+
+#: data/mail-notification.schemas.in.h:31
+msgid ""
+"The list of trusted SSL/TLS servers (hostname:port) lacking a X509 "
+"certificate."
+msgstr ""
+"信頼性の確認されたサーバー (ホスト名:ポート番号) の一覧 (X509証明書がない場"
+"合)."
+
+#: data/mail-notification.schemas.in.h:32
+msgid ""
+"The list of trusted X509 certificates, represented by their MD5 fingerprint."
+msgstr "信頼性の確認されたX509証明書の一覧. (MD5電子指紋で表示)"
+
+#: data/mail-notification.schemas.in.h:33
+msgid ""
+"The number of pixels to leave between the left or right side of the screen "
+"and the mail summary popup."
+msgstr ""
+"画面の左端・右端から, メール一覧ポップアップを表示する位置までの距離をピクセ"
+"ルで指定."
+
+#: data/mail-notification.schemas.in.h:34
+msgid ""
+"The number of pixels to leave between the top or bottom side of the screen "
+"and the mail summary popup."
+msgstr ""
+"画面の上端・下端から, メール一覧ポップアップを表示する位置までの距離をピクセ"
+"ルで指定."
+
+#: data/mail-notification.schemas.in.h:35
+msgid ""
+"The position of the mail summary popup. Must be \"top-left\", \"top-right\", "
+"\"bottom-left\" or \"bottom-right\"."
+msgstr ""
+"メール一覧ポップアップの表示位置. \"top-left\", \"top-right\", \"bottom-left"
+"\", \"bottom-right\" のいずれかを指定."
+
+#: data/mail-notification.schemas.in.h:36
+msgid ""
+"The type of mail summary to display in the icon's tooltip. Must be \"standard"
+"\", \"compact\" or \"none\"."
+msgstr ""
+"メール一覧の表示形式. \"standard\", \"compat\", \"none\"のいずれかを指定."
+
+#: data/mail-notification.schemas.in.h:37
+msgid "The width of the properties dialog in pixels."
+msgstr "プロパティダイアログの幅 (ピクセルで指定)."
+
+#: data/mail-notification.schemas.in.h:38
+msgid "Tooltip mail summary"
+msgstr "メール一覧をバルーンで表示"
+
+#: data/mail-notification.schemas.in.h:39
+msgid "Trusted servers list"
+msgstr "信頼性の確認されたサーバーの一覧"
+
+#: data/mail-notification.schemas.in.h:40
+msgid "Whether the status icon should blink on errors or not."
+msgstr "エラー発生時にステータスアイコンを点滅させるかどうか."
+
+#: data/mail-notification.schemas.in.h:41
+msgid "Whether to automatically close the mail summary popup or not."
+msgstr "メール一覧ポップアップを自動的に閉じるかどうか."
+
+#: data/mail-notification.schemas.in.h:42
+msgid "Whether to display an icon when there is no new mail or not."
+msgstr "新着メールが無いときにもアイコンを表示するかどうか."
+
+#: data/mail-notification.schemas.in.h:43
+msgid "Whether to display seen mail or not."
+msgstr "確認ずみのメールを表示するかどうか."
+
+#: data/mail-notification.schemas.in.h:44
+msgid "Whether to display the mail summary popup when new mail arrives or not."
+msgstr "メール着信時, メール一覧をポップアップするかどうか."
+
+#: data/mail-notification.schemas.in.h:45
+msgid ""
+"Whether to hide previously displayed mail in the mail summary popup or not."
+msgstr "メール一覧ポップアップに, 過去に表示したものを含めるかどうか."
+
+#: data/mail-notification.schemas.in.h:46
+msgid "Whether to run a command when all mail is read or not."
+msgstr "全メールを開封した後のコマンド実行の有無."
+
+#: data/mail-notification.schemas.in.h:47
+msgid "Whether to run a command when new mail arrives or not."
+msgstr "メール着信時のコマンド実行の有無."
+
+#: data/mail-notification.schemas.in.h:48
+msgid "Width of properties dialog"
+msgstr "プロバティダイアログの幅"
+
+#: src/eggtrayicon.c:132
+msgid "Orientation"
+msgstr "向き"
+
+#: src/eggtrayicon.c:133
+msgid "The orientation of the tray."
+msgstr "トレイの向き"
+
+#. translators: header capitalization
+#: src/mn-about-dialog.gob:49
+msgid "A Mail Notification Icon"
+msgstr "メールボックスを自動的にチェックし,\n新着メールをお知らせします"
+
+#.
+#. * translators: Your Name <your-email>
+#. * optionally followed by one or more: \nOther Contributor's Name <his-email>
+#.
+#: src/mn-about-dialog.gob:57
+msgid "translator-credits"
+msgstr "Hiroshi Hasebe <hhasebe@DVOI.COM>"
+
+#: src/mn-about-dialog.gob:79
+msgid "Unable to open link"
+msgstr "リンクを開くことができません"
+
+#: src/mn-auth-combo-box.gob:103 src/mn-autodetect-mailbox-properties.gob:109
+msgid "<span style=\"italic\">autodetect</span>"
+msgstr "<span style=\"italic\">自動検出</span>"
+
+#: src/mn-authenticated-mailbox-properties.gob:46
+msgid "_Username:"
+msgstr "ユーザー名 (_U):"
+
+#: src/mn-authenticated-mailbox-properties.gob:50
+msgid "_Password:"
+msgstr "パスワード(_P):"
+
+#: src/mn-autodetect-mailbox-properties.gob:110
+msgid "Location"
+msgstr "メールボックスの所在"
+
+#: src/mn-autodetect-mailbox-properties.gob:122
+msgid "_Location:"
+msgstr "所在(_L):"
+
+#. translators: header capitalization
+#: src/mn-autodetect-mailbox-properties.gob:130
+msgid "_Browse..."
+msgstr "ブラウズ(_B)..."
+
+#. translators: header capitalization
+#: src/mn-autodetect-mailbox-properties.gob:172
+msgid "Select a File or Folder"
+msgstr "ファイルもしくはフォルダを選択"
+
+#: src/mn-client-session.c:247
+#, c-format
+msgid "resolving %s"
+msgstr "%sを解決中"
+
+#: src/mn-client-session.c:263
+#, c-format
+msgid "unable to resolve %s: %s"
+msgstr "%sの解決に失敗: %s"
+
+#: src/mn-client-session.c:304
+#, c-format
+msgid "network address #%i"
+msgstr "ネットワークアドレス#%i"
+
+#: src/mn-client-session.c:307
+#, c-format
+msgid "unable to convert network address #%i into textual form: %s"
+msgstr "ネットワークアドレス#%iの文字列への変換に失敗: %s"
+
+#: src/mn-client-session.c:318
+#, c-format
+msgid "%s: unsupported address family"
+msgstr "%s: サポートされていないアドレス形式"
+
+#: src/mn-client-session.c:325
+#, c-format
+msgid "%s: unable to create socket: %s"
+msgstr "%s: ソケットの作成に失敗: %s"
+
+#: src/mn-client-session.c:329
+#, c-format
+msgid "connecting to %s (%s) port %i"
+msgstr "%s (%s) のポート %i に接続中"
+
+#: src/mn-client-session.c:332
+#, c-format
+msgid "unable to connect: %s"
+msgstr "接続に失敗: %s"
+
+#: src/mn-client-session.c:337
+msgid "connected successfully"
+msgstr "接続に成功"
+
+#. if reached, we couldn't find a working address
+#: src/mn-client-session.c:351
+#, c-format
+msgid "unable to connect to %s"
+msgstr "%sへの接続に失敗"
+
+#: src/mn-client-session.c:378
+#, c-format
+msgid "unable to initialize the OpenSSL library: %s"
+msgstr "OpenSSLライブラリの初期化に失敗: %s"
+
+#: src/mn-client-session.c:386
+#, c-format
+msgid "unable to create a SSL/TLS object: %s"
+msgstr "SSL/TLSオブジェクトの作成に失敗: %s"
+
+#: src/mn-client-session.c:392
+#, c-format
+msgid "unable to set the SSL/TLS file descriptor: %s"
+msgstr "SSL/TLSファイルディスクリプタの設定に失敗: %s"
+
+#: src/mn-client-session.c:398
+#, c-format
+msgid "unable to perform the SSL/TLS handshake: %s"
+msgstr "SSL/TLSのハンドシェイクに失敗: %s"
+
+#: src/mn-client-session.c:404
+msgid "untrusted server"
+msgstr "信頼性が不明なサーバー"
+
+#: src/mn-client-session.c:408
+#, c-format
+msgid "a SSL/TLS layer is now active (%s, %s %i-bit)"
+msgstr "SSL/TLSレイヤが有効になりました (%s, %s %iビット)"
+
+#: src/mn-client-session.c:455
+#, c-format
+msgid "%s, fingerprint: %s"
+msgstr "%s, 電子指紋 %s"
+
+#: src/mn-client-session.c:484
+msgid "missing certificate"
+msgstr "電子証明書が欠落"
+
+#: src/mn-client-session.c:510
+#, c-format
+msgid ""
+"Mail Notification was unable to trust \"%s\" (%s). It is possible that "
+"someone is intercepting your communication to obtain your confidential "
+"information.\n"
+"\n"
+"You should only connect to the server if you are certain you are connected "
+"to \"%s\". If you choose to connect to the server, this message will not be "
+"shown again."
+msgstr ""
+"\"%s\" (%s) の信頼性を確認できませんでした. 通信内容が第三者によって傍受"
+"されるおそれがあります.\n"
+"\n"
+"\"%s\"へ確実に接続している場合にのみ, サーバーへ接続されることを"
+"おすすめします. サーバーへ接続すると, このメッセージは表示されなくなります."
+
+#: src/mn-client-session.c:525
+msgid "Connect to untrusted server?"
+msgstr "信頼性が確認されていないサーバーに接続しますか?"
+
+#: src/mn-client-session.c:590
+#, c-format
+msgid "response \"%s\" is not valid in current context"
+msgstr "このコンテキストでの応答\"%s\"は無効です"
+
+#: src/mn-client-session.c:619
+#, c-format
+msgid "unable to parse response \"%s\""
+msgstr "応答\"%s\"の解析に失敗"
+
+#: src/mn-client-session.c:669 src/mn-client-session.c:676
+#, c-format
+msgid "unable to read from server: %s"
+msgstr "サーバーからの読み出しに失敗: %s"
+
+#: src/mn-client-session.c:674
+msgid "unable to read from server: EOF"
+msgstr "サーバーからの読み出しに失敗: EOF"
+
+#: src/mn-client-session.c:686
+#, c-format
+msgid "unable to decode data using SASL: %s"
+msgstr "SASLでデコードに失敗: %s"
+
+#: src/mn-client-session.c:831
+#, c-format
+msgid "unable to encode data using SASL: %s"
+msgstr "SASLでエンコードに失敗: %s"
+
+#: src/mn-client-session.c:862 src/mn-client-session.c:869
+#, c-format
+msgid "unable to write to server: %s"
+msgstr "サーバーへの書き込みに失敗: %s"
+
+#: src/mn-client-session.c:867
+msgid "unable to write to server: EOF"
+msgstr "サーバーへの書き込みに失敗: EOF"
+
+#: src/mn-client-session.c:898 src/mn-pop3-mailbox.gob:433
+#, c-format
+msgid "unable to encode Base64: %s"
+msgstr "Base64エンコードに失敗: %s"
+
+#: src/mn-client-session.c:1075
+#, c-format
+msgid "unable to initialize the SASL library: %s"
+msgstr "SASLライブラリの初期化に失敗: %s"
+
+#: src/mn-client-session.c:1087
+#, c-format
+msgid "unable to retrieve local address of socket: %s"
+msgstr "ソケットのローカルアドレスの取得に失敗: %s"
+
+#: src/mn-client-session.c:1093
+#, c-format
+msgid "unable to retrieve remote address of socket: %s"
+msgstr "ソケットのリモードアドレスの取得に失敗: %s"
+
+#: src/mn-client-session.c:1127
+#, c-format
+msgid "unable to set SASL security properties: %s"
+msgstr "SASLのセキュリティに関する設定に失敗: %s"
+
+#: src/mn-client-session.c:1151
+msgid ""
+"unable to start SASL authentication: SASL asked for something we did not know"
+msgstr "SASL認証を開始できません. 未知の要求を検出しました"
+
+#: src/mn-client-session.c:1170
+#, c-format
+msgid "unable to start SASL authentication: %s"
+msgstr "SASL認証を開始できません: %s"
+
+#: src/mn-client-session.c:1174
+#, c-format
+msgid "unable to create a SASL connection: %s"
+msgstr "SASLコネクションの確立に失敗: %s"
+
+#: src/mn-client-session.c:1221
+msgid "SASL asked for something we did not know, aborting SASL authentication"
+msgstr "SASLから未知の要求が発生. SASL認証を中止します"
+
+#: src/mn-client-session.c:1238
+#, c-format
+msgid "%s, aborting SASL authentication"
+msgstr "%s, SASL認証を中止"
+
+#. compliance error
+#: src/mn-client-session.c:1243
+#, c-format
+msgid "unable to decode Base64 input from server: %s"
+msgstr "サーバから取得したメッセージのBase64デコードに失敗: %s"
+
+#: src/mn-client-session.c:1279
+#, c-format
+msgid "a SASL security layer of strength factor %i is now active"
+msgstr "SASLのセキュリティレイヤ (強度%i) が有効になりました"
+
+#. a security layer is active but we can't retrieve maxoutbuf -> fatal
+#: src/mn-client-session.c:1284
+#, c-format
+msgid "unable to get SASL_MAXOUTBUF property: %s"
+msgstr "SASL_MAXOUTBUFプロパティの取得に失敗: %s"
+
+#: src/mn-client-session.c:1290
+#, c-format
+msgid "warning: unable to get SASL_SSF property: %s"
+msgstr "警告: SASL_SSFプロパティの取得に失敗: %s"
+
+#: src/mn-client-session.c:1449
+msgid "unknown server error"
+msgstr "未知のサーバーエラー"
+
+#: src/mn-compact-message-view.gob:45
+msgid "Mailbox"
+msgstr "メールボックス"
+
+#: src/mn-compact-message-view.gob:46
+msgid "From"
+msgstr "差出人"
+
+#: src/mn-compact-message-view.gob:47
+msgid "Subject"
+msgstr "件名"
+
+#: src/mn-compact-message-view.gob:48
+msgid "Sent"
+msgstr "発信時期"
+
+#: src/mn-conf.c:262
+msgid "A directory creation error has occurred"
+msgstr "ディレクトリ作成時にエラーが発生"
+
+#: src/mn-conf.c:263
+#, c-format
+msgid "Unable to create directory \"%s\": %s."
+msgstr "ディレクトリ\"%s\"の作成に失敗: %s."
+
+#: src/mn-conf.c:402
+#, c-format
+msgid "recursively unsetting %s"
+msgstr "%sの設定を再帰的に解除中"
+
+#: src/mn-conf.c:406
+msgid "syncing the GConf database"
+msgstr "GConfデータベースを同期中"
+
+#: src/mn-conf.c:409
+msgid "completed"
+msgstr "完了"
+
+#: src/mn-conf.c:1137
+msgid "A command error has occurred in Mail Notification"
+msgstr "メール着信通知システムの内部でコマンドエラーが発生"
+
+#: src/mn-conf.c:1138
+#, c-format
+msgid "Unable to execute \"%s\": %s."
+msgstr "\"%s\"の実行に失敗: %s."
+
+#: src/mn-custom-vfs-mailbox.gob:76
+msgid "invalid location"
+msgstr "不正な位置指定"
+
+#: src/mn-evolution-folder-tree-control.c:91
+msgid "The currently selected URI"
+msgstr "現在選択されているURI"
+
+#. translators: header capitalization
+#: src/mn-evolution-mailbox-properties.gob:68
+msgid "Folder"
+msgstr "フォルダ"
+
+#: src/mn-evolution-mailbox-properties.gob:159
+msgid ""
+"Mail Notification can not contact Evolution. Make sure that Evolution is "
+"running and that the Evolution Mail Notification plugin is loaded."
+msgstr ""
+"Evolutionに接続できません. Evolutionが稼働しており, かつ"
+"Evolutionプラグインが読み込まれていることをご確認ください."
+
+#: src/mn-evolution-mailbox.gob:75
+msgid "folder not found"
+msgstr "フォルダが見つかりません"
+
+#: src/mn-evolution-mailbox.gob:216
+msgid "unable to contact Evolution"
+msgstr "Evolutionに接続できません"
+
+#: src/mn-evolution-plugin.c:136 src/mn-evolution-plugin.c:140
+msgid "Unable to activate the Mail Notification plugin"
+msgstr "プラグインが動作しません"
+
+#: src/mn-evolution-plugin.c:136
+#, c-format
+msgid ""
+"Bonobo could not locate the %s server. Please check your Mail Notification "
+"installation."
+msgstr ""
+"Bonoboがサーバー%sを検出できませんでした. メール着信通知システムが正しく"
+"インストールされているかどうかをご確認ください."
+
+#: src/mn-evolution-plugin.c:140 src/mn-main.c:460
+#, c-format
+msgid ""
+"Bonobo was unable to register the %s server. Please check your Mail "
+"Notification installation."
+msgstr ""
+"Bonoboがサーバー%sを登録できませんでした. メール着信通知システムが正しく"
+"インストールされているかどうかをご確認ください."
+
+#: src/mn-gmail-mailbox.gob:103
+msgid "invalid feed location"
+msgstr "フィードの指定が不正"
+
+#: src/mn-gmail-mailbox.gob:117
+#, c-format
+msgid "retrieving feed from %s"
+msgstr "%sからフィードを取得中"
+
+#: src/mn-gmail-mailbox.gob:124
+#, c-format
+msgid "unable to retrieve feed: %s"
+msgstr "フィードを取得できませんでした: %s"
+
+#: src/mn-gmail-mailbox.gob:139 src/mn-gmail-mailbox.gob:187
+msgid "unable to parse feed"
+msgstr "フィードの内容を解析できません"
+
+#: src/mn-gmime-stream-vfs.gob:50 src/mn-sylpheed-mailbox-backend.gob:205
+#, c-format
+msgid "unable to read %s: %s"
+msgstr "%sの読み取りに失敗: %s"
+
+#: src/mn-gmime-stream-vfs.gob:52
+#, c-format
+msgid "unable to write to %s: %s"
+msgstr "%sへの書き込みに失敗: %s"
+
+#: src/mn-gmime-stream-vfs.gob:54
+#, c-format
+msgid "unable to seek in %s: %s"
+msgstr "%sのシークに失敗: %s"
+
+#: src/mn-gmime-stream-vfs.gob:56
+#, c-format
+msgid "unable to tell position of %s: %s"
+msgstr "%sの位置判別に失敗: %s"
+
+#: src/mn-gmime-stream-vfs.gob:58 src/mn-mh-mailbox-backend.gob:164
+#, c-format
+msgid "unable to close %s: %s"
+msgstr "%sのクローズに失敗: %s"
+
+#: src/mn-imap-mailbox-properties.gob:114 src/mn-standard-message-view.gob:62
+msgid "Mailbox:"
+msgstr "メールボックス:"
+
+#: src/mn-imap-mailbox-properties.gob:118
+msgid "in_box"
+msgstr "In_box"
+
+#: src/mn-imap-mailbox-properties.gob:129
+msgid "oth_er:"
+msgstr "他(_E):"
+
+#: src/mn-imap-mailbox-properties.gob:140
+msgid "ne_ver"
+msgstr "しない(_V)"
+
+#: src/mn-imap-mailbox-properties.gob:141
+msgid "au_todetect"
+msgstr "自動検出(_T)"
+
+#: src/mn-imap-mailbox-properties.gob:142
+msgid "al_ways"
+msgstr "常に(_W)"
+
+#: src/mn-imap-mailbox-properties.gob:174
+msgid "Use the <span style=\"italic\">IDLE</span> extension:"
+msgstr "拡張機能<span style=\"italic\">IDLE</span>を使用します:"
+
+#: src/mn-imap-mailbox.gob:384
+msgid "server did not send capabilities"
+msgstr "サーバーの仕様取得に失敗"
+
+#: src/mn-imap-mailbox.gob:551
+msgid "server advertised LOGINDISABLED, not using LOGIN authentication"
+msgstr "サーバーからLOGINDISABLEDの通知あり. LOGIN認証の使用を取り止めます"
+
+#: src/mn-imap-mailbox.gob:552
+msgid "unable to login"
+msgstr "ログインできません"
+
+#. compliance error
+#: src/mn-imap-mailbox.gob:752
+msgid "server did not send all the messages we requested"
+msgstr "サーバーから検索結果が得られませんでした"
+
+#: src/mn-imap-mailbox.gob:822
+msgid "unable to fetch message"
+msgstr "メッセージの取得に失敗"
+
+#: src/mn-imap-mailbox.gob:847
+msgid ""
+"\"Use the IDLE extension\" set to \"never\" in the mailbox properties, "
+"logging out"
+msgstr ""
+"メールボックスの設定で\"Use the IDLE extension\"が\"never\""
+"になっています. ログアウトします"
+
+#: src/mn-imap-mailbox.gob:858
+#, c-format
+msgid "the remote server runs %s, not using the IDLE extension"
+msgstr "サーバーで%sが稼働しています. 拡張機能IDLEは使用しません"
+
+#: src/mn-imap-mailbox.gob:863
+#, c-format
+msgid ""
+"the remote server runs %s, the IDLE extension might not function properly"
+msgstr ""
+"サーバーで%sが稼働しています. 拡張機能 IDLE が正常に機能しないおそれが"
+"あります"
+
+#: src/mn-imap-mailbox.gob:872
+msgid "the remote server does not support the IDLE extension, logging out"
+msgstr "サーバーが拡張機能IDLEをサポートしていません. ログアウトします"
+
+#: src/mn-imap-mailbox.gob:1377 src/mn-pop3-mailbox.gob:296
+msgid "server does not support in-band SSL/TLS"
+msgstr "サーバーがin-band SSL/TLSをサポートしていません"
+
+#: src/mn-imap-mailbox.gob:1401 src/mn-pop3-mailbox.gob:947
+msgid ""
+"a SASL authentication mechanism was selected but SASL support has not been "
+"compiled in"
+msgstr ""
+"SASL認証が選択されましたが, コンパイル時にSASLの使用が指定されて"
+"いません"
+
+#: src/mn-imap-mailbox.gob:1411 src/mn-pop3-mailbox.gob:967
+#, c-format
+msgid "unknown authentication mechanism \"%s\""
+msgstr "\"%s\"は未知の認証方式です"
+
+#: src/mn-imap-mailbox.gob:1443 src/mn-pop3-mailbox.gob:1003
+#, c-format
+msgid "disabling mechanism \"%s\" and retrying SASL authentication"
+msgstr "\"%s\"を無効にし, SASL認証で再試行します"
+
+#: src/mn-imap-mailbox.gob:1455
+msgid "falling back to IMAP LOGIN authentication"
+msgstr "代替認証方式として, IMAP LOGINへ切り替えます"
+
+#: src/mn-imap-mailbox.gob:1467 src/mn-pop3-mailbox.gob:1032
+msgid "authentication failed"
+msgstr "認証に失敗しました"
+
+#. success; caller must switch state itself
+#. compliance error
+#: src/mn-imap-mailbox.gob:1528
+msgid "server did not send search results"
+msgstr "サーバーから検索結果が返しませんでした"
+
+#. translators: header capitalization
+#: src/mn-mail-icon.gob:89
+msgid "_Mail Reader"
+msgstr "メールリーダーを起動(_M)"
+
+#. translators: header capitalization
+#: src/mn-mail-icon.gob:91 src/mn-mailbox-view.gob:312
+msgid "_Update"
+msgstr "今すぐメールをチェック(_U)"
+
+#. translators: header capitalization
+#: src/mn-mail-icon.gob:98
+msgid "R_emove From Notification Area"
+msgstr "通知エリアから外す(_E)"
+
+#. translators: header capitalization
+#: src/mn-mail-summary-popup.gob:270
+msgid "<span size=\"larger\" weight=\"bold\">Mail Summary</span>"
+msgstr "<span size=\"larger\" weight=\"bold\">新着メール一覧</span>"
+
+#. translators: header capitalization
+#: src/mn-mail-summary-popup.gob:277
+msgid "<span weight=\"bold\">Mail Summary</span>"
+msgstr "<span weight=\"bold\">新着メール一覧</span>"
+
+#. translators: header capitalization
+#: src/mn-mailbox-properties-dialog.gob:89
+#, c-format
+msgid "%s Properties"
+msgstr "%sのプロパティ"
+
+#. translators: header capitalization
+#: src/mn-mailbox-properties-dialog.gob:232
+msgid "Add a Mailbox"
+msgstr "メールボックスを追加"
+
+#: src/mn-mailbox-view.gob:248
+msgid "A paste error has occurred"
+msgstr "ペーストエラーが発生"
+
+#: src/mn-mailbox-view.gob:557
+#, c-format
+msgid "unhandled %s mailbox (%s)"
+msgstr "未処理のメールボックス%s (%s)"
+
+#: src/mn-mailbox-view.gob:562
+#, c-format
+msgid "%s mailbox"
+msgstr "%sメールボックス"
+
+#: src/mn-mailbox-view.gob:577
+msgid "detecting mailbox type..."
+msgstr "メールボックスの種別を判別しています..."
+
+#: src/mn-mailbox.gob:472
+msgid "\"type\" attribute missing"
+msgstr "\"type\"属性が欠落"
+
+#: src/mn-mailbox.gob:479
+#, c-format
+msgid "unknown mailbox type \"%s\""
+msgstr "メールボックスの種別が不明: \"%s\""
+
+#: src/mn-mailbox.gob:499
+#, c-format
+msgid ""
+"property \"%s\": unable to transform string \"%s\" into a value of type \"%s"
+"\""
+msgstr ""
+"\"%s\"プロパティ: 文字列\"%s\"を\"%s\"へ変換できません"
+
+#: src/mn-mailbox.gob:948
+#, c-format
+msgid "property \"%s\" has no value"
+msgstr "\"%s\"プロパティの値が欠落"
+
+#: src/mn-mailboxes.gob:239
+msgid "An error has occurred while importing old mailboxes"
+msgstr "古いメールボックスのインポート時にエラーが発生"
+
+#: src/mn-mailboxes.gob:265
+msgid "Unable to load the mailboxes configuration"
+msgstr "メールボックスの設定読み込みに失敗"
+
+#: src/mn-mailboxes.gob:311
+msgid "Unable to parse the XML document."
+msgstr "XMLドキュメントの解析に失敗."
+
+#: src/mn-mailboxes.gob:318
+msgid "The root element is missing."
+msgstr "ルートエレメントが欠落."
+
+#: src/mn-mailboxes.gob:324
+#, c-format
+msgid "The root element \"%s\" is invalid."
+msgstr "ルートエレメント\"%s\"が不正."
+
+#: src/mn-mailboxes.gob:347
+#, c-format
+msgid "On line %i: %s."
+msgstr "オンライン%i: %s"
+
+#: src/mn-mailboxes.gob:352
+#, c-format
+msgid "On line %i: unknown element \"%s\"."
+msgstr "オンライン%i: 未知の要素\"%s\"."
+
+#: src/mn-mailboxes.gob:361
+msgid "An error has occurred while loading the mailboxes configuration"
+msgstr "メールボックスの設定読み込み時にエラーが発生"
+
+#: src/mn-mailboxes.gob:386
+msgid "Unable to save the mailboxes configuration"
+msgstr "メールボックスの設定を保存できません"
+
+#: src/mn-mailboxes.gob:428
+#, c-format
+msgid "Unable to remove %s: %s."
+msgstr "%sの削除に失敗: %s."
+
+#: src/mn-mailboxes.gob:436
+#, c-format
+msgid "Unable to create %s: %s."
+msgstr "%sの作成に失敗: %s."
+
+#: src/mn-mailboxes.gob:443
+#, c-format
+msgid "Unable to open %s for writing: %s."
+msgstr "書き込み時, %sのオープンに失敗: %s."
+
+#: src/mn-mailboxes.gob:450
+msgid "Unable to write the XML document."
+msgstr "XMLドキュメントの作成に失敗."
+
+#: src/mn-mailboxes.gob:456
+#, c-format
+msgid "Unable to close %s: %s."
+msgstr "%sのクローズに失敗: %s"
+
+#: src/mn-mailboxes.gob:466 src/mn-mailboxes.gob:473
+#, c-format
+msgid "Unable to rename %s to %s: %s."
+msgstr "%sから%sへの名称変更に失敗: %s"
+
+#. non fatal
+#: src/mn-mailboxes.gob:479
+#, c-format
+msgid "unable to delete %s: %s"
+msgstr "%sの削除に失敗: %s"
+
+#: src/mn-mailboxes.gob:509
+#, c-format
+msgid "%s has %i new message"
+msgstr "%sに新着メールが%i件"
+
+#: src/mn-mailboxes.gob:535
+#, c-format
+msgid "%s reported an error: %s"
+msgstr "%sがエラーを検出: %s"
+
+#: src/mn-maildir-mailbox-backend.gob:125
+#, c-format
+msgid "unable to open folder \"%s\": %s"
+msgstr "\"%s\"フォルダのオープンに失敗: %s"
+
+#: src/mn-maildir-mailbox-backend.gob:173
+#, c-format
+msgid "unable to close folder \"%s\": %s"
+msgstr "\"%s\"フォルダのクローズに失敗: %s"
+
+#: src/mn-maildir-mailbox-backend.gob:176
+#, c-format
+msgid "error while reading folder \"%s\": %s"
+msgstr "\"%s\"フォルダの読み込みに失敗: %s"
+
+#: src/mn-main.c:100
+msgid "yes"
+msgstr "はい"
+
+#: src/mn-main.c:100
+msgid "no"
+msgstr "いいえ"
+
+#: src/mn-main.c:132
+#, c-format
+msgid "%s version %s\n"
+msgstr "%sバージョン%s\n"
+
+#: src/mn-main.c:137
+msgid "Mailbox backends:\n"
+msgstr "メールボックスのバックエンド:\n"
+
+#: src/mn-main.c:142
+msgid "POP3 and IMAP features:\n"
+msgstr "POP3とIMAPの機能:\n"
+
+#: src/mn-main.c:147
+msgid "Sylpheed features:\n"
+msgstr "Sylpheed (Sylphid) の機能:\n"
+
+#: src/mn-main.c:198
+#, c-format
+msgid "A Bonobo exception (%s) has occurred in %s()."
+msgstr "Bonoboで例外 (%s) が発生: $s()."
+
+#: src/mn-main.c:220
+msgid "Show version information"
+msgstr "バージョン情報を表示"
+
+#: src/mn-main.c:229
+msgid "Enable informational output"
+msgstr "情報出力を有効に"
+
+#: src/mn-main.c:238
+msgid "Display the properties dialog"
+msgstr "プロパティダイアログを表示"
+
+#: src/mn-main.c:247
+msgid "Display the about dialog"
+msgstr "情報ダイアログを表示"
+
+#: src/mn-main.c:256
+msgid "Close the mail summary popup"
+msgstr "メール一覧ポップアップを閉じる"
+
+#: src/mn-main.c:265
+msgid "Update the mail status"
+msgstr "その時点での着信状況をチェック"
+
+#: src/mn-main.c:274
+msgid "Unset obsolete GConf configuration"
+msgstr "旧バージョンのGConf設定を解除"
+
+#: src/mn-main.c:283
+msgid "Quit Mail Notification"
+msgstr "メール着信通知システムを終了"
+
+#.
+#. * We cannot use mn_fatal_error_dialog() because gtk_init() has
+#. * not been called yet.
+#.
+#: src/mn-main.c:310
+msgid "multi-threading is not available"
+msgstr "マルチスレッド使用不可"
+
+#: src/mn-main.c:365
+msgid ""
+"Bonobo could not locate the automation object. Please check your Mail "
+"Notification installation."
+msgstr ""
+"Bonoboがオードメーションオブジェクトの検出に失敗しました. メール着信通知"
+"システムが正しくインストールされているかどうかをご確認ください."
+
+#: src/mn-main.c:371
+msgid "quitting Mail Notification"
+msgstr "メール着信通知システム終了します..."
+
+#: src/mn-main.c:375
+msgid "Mail Notification is not running"
+msgstr "メール着信通知システムが稼働していません"
+
+#: src/mn-main.c:390
+msgid "Unable to initialize the GnomeVFS library."
+msgstr "GnomeVFSライブラリの初期化に失敗."
+
+#: src/mn-main.c:438
+msgid "updating the mail status"
+msgstr "着信状況をチェック中"
+
+#: src/mn-main.c:446
+msgid "Mail Notification is already running"
+msgstr "メール着信通知システムは既に稼働しています"
+
+#: src/mn-main.c:456
+#, c-format
+msgid ""
+"Bonobo could not locate the %s file. Please check your Mail Notification "
+"installation."
+msgstr ""
+"Bonoboが%sファイルの検出に失敗しました. メール着信通知システムが正しく"
+"インストールされているかどうかをご確認ください."
+
+#: src/mn-mbox-mailbox-backend.gob:281
+#, c-format
+msgid "unable to close file: %s"
+msgstr "ファイルのクローズに失敗: %s"
+
+#: src/mn-mbox-mailbox-backend.gob:298
+#, c-format
+msgid "unable to open mailbox: %s"
+msgstr "メールボックスのオープンに失敗: %s"
+
+#: src/mn-message-mime.c:121
+msgid "unable to parse MIME message"
+msgstr "MIMEメッセージの解析に失敗"
+
+#: src/mn-message.gob:111
+msgid "Unknown"
+msgstr "不明"
+
+#. translators: "none" is used like "Mailbox: none"
+#: src/mn-message.gob:130
+msgid "none"
+msgstr "無し"
+
+#: src/mn-mh-mailbox-backend.gob:167
+#, c-format
+msgid "error while reading %s: %s"
+msgstr "%sの読み出し中にエラーが発生: %s"
+
+#: src/mn-mh-mailbox-backend.gob:180
+#, c-format
+msgid "unable to open %s: %s"
+msgstr "%sのオープンに失敗: %s"
+
+#: src/mn-pi-mailbox-properties.gob:67
+msgid "sta_ndard"
+msgstr "標準(_N)"
+
+#: src/mn-pi-mailbox-properties.gob:68
+msgid "in-band SS_L/TLS"
+msgstr "SS_L/TLS (in-band)"
+
+#: src/mn-pi-mailbox-properties.gob:69
+msgid "SSL/TLS on sepa_rate port"
+msgstr "SSL/TLSポートの番号を指定(_R)"
+
+#: src/mn-pi-mailbox-properties.gob:73
+msgid "Ho_stname:"
+msgstr "サーバー(_S):"
+
+#. translators: header capitalization
+#: src/mn-pi-mailbox-properties.gob:94
+msgid "_Details"
+msgstr "詳細(_D)"
+
+#: src/mn-pi-mailbox-properties.gob:149
+msgid "Connection type:"
+msgstr "接続方式:"
+
+#: src/mn-pi-mailbox-properties.gob:156
+msgid "Port:"
+msgstr "ポート:"
+
+#: src/mn-pi-mailbox-properties.gob:179
+msgid "Authent_ication mechanism:"
+msgstr "認証方式(_A):"
+
+#: src/mn-pi-mailbox.gob:151
+msgid "SSL/TLS support has not been compiled in"
+msgstr "SSL/TLSを使用するための機能がコンパイル時に指定されていません"
+
+#: src/mn-pi-mailbox.gob:317
+#, c-format
+msgid ""
+"Mail Notification was unable to log into %s mailbox %s, possibly because the "
+"credentials you have entered are invalid.\n"
+"\n"
+"Please re-enter your credentials."
+msgstr ""
+"%sのメールボックス\"%s\"にログインできませんでした. 誤った認証情報が"
+"入力されたためと思われます."
+"\n"
+"入力しなおしてみてください."
+
+#: src/mn-pi-mailbox.gob:318
+#, c-format
+msgid "Enter your credentials for %s mailbox %s."
+msgstr "%sのメールボックス\"%s\"の認証情報を入力してください."
+
+#. keep the title in sync with gnome-authentication-manager
+#. translators: header capitalization
+#: src/mn-pi-mailbox.gob:361
+msgid "Authentication Required"
+msgstr "認証が必要です"
+
+#: src/mn-pop3-mailbox.gob:344
+msgid "invalid arguments for the LOGIN-DELAY capability"
+msgstr "LOGIN-DELAY機能に対する引数が不正"
+
+#.
+#. * Some servers violate RFC 2449 by not supporting a
+#. * second argument to the AUTH command. Support these
+#. * servers nevertheless, by retrying without the SASL
+#. * initial client response.
+#.
+#: src/mn-pop3-mailbox.gob:485
+msgid ""
+"SASL authentication with initial client response failed, retrying without "
+"initial client response"
+msgstr "クライアントの初期応答でSASL認証に失敗. 初期応答なしで"
+"再試行します"
+
+#: src/mn-pop3-mailbox.gob:696
+msgid "unknown error"
+msgstr "未知のエラー"
+
+#: src/mn-pop3-mailbox.gob:791
+#, c-format
+msgid "honouring LOGIN-DELAY, sleeping for %i second"
+msgstr "LOGIN-DELAYを尊重し, %i秒待ちます"
+
+#: src/mn-pop3-mailbox.gob:959
+msgid "server does not support APOP authentication"
+msgstr "サーバーがAPOP認証をサポートしていません"
+
+#: src/mn-pop3-mailbox.gob:1015
+msgid "falling back to APOP authentication"
+msgstr "代替認証方式として, APOPに切り替えます."
+
+#: src/mn-pop3-mailbox.gob:1020
+msgid "falling back to USER/PASS authentication"
+msgstr "代替認証方式として, USER/PASSに切り替えます."
+
+#. translators: header capitalization
+#: src/mn-properties-dialog.gob:173 ui/properties-dialog.glade.h:13
+msgid "Mail Notification Properties"
+msgstr "メール着信通知システムのプロパティ"
+
+#: src/mn-properties-dialog.gob:207
+msgid "top left"
+msgstr "左上"
+
+#: src/mn-properties-dialog.gob:208
+msgid "top right"
+msgstr "右上"
+
+#: src/mn-properties-dialog.gob:209
+msgid "bottom left"
+msgstr "左下"
+
+#: src/mn-properties-dialog.gob:210
+msgid "bottom right"
+msgstr "右下"
+
+#: src/mn-properties-dialog.gob:332
+msgid "No mailbox selected."
+msgstr "メールボックスを選択してください."
+
+#: src/mn-properties-dialog.gob:337
+#, c-format
+msgid "%i mailbox selected."
+msgstr "メールボックスを%i個選択."
+
+#: src/mn-properties-dialog.gob:456
+#, c-format
+msgid "Test message #%i"
+msgstr "テストメッセージ#%i"
+
+#. translators: header capitalization
+#: src/mn-properties-dialog.gob:462
+msgid "Mail Notification Properties Dialog"
+msgstr "プロパティダイアログ"
+
+#. translators: header capitalization
+#: src/mn-shell.gob:381
+msgid "Mailboxes Having New Mail"
+msgstr "メールボックスごとの着信状況"
+
+#. translators: header capitalization
+#: src/mn-shell.gob:400
+msgid "Errors"
+msgstr "エラー"
+
+#. translators: header capitalization
+#: src/mn-shell.gob:416
+msgid "Mail Summary"
+msgstr "新着メール一覧"
+
+#: src/mn-shell.gob:445
+msgid "You have no new mail."
+msgstr "新着メールはありません."
+
+#: src/mn-ssl.c:76
+msgid "unknown SSL/TLS error"
+msgstr "未知のSSL/TLSエラー"
+
+#: src/mn-standard-message-view.gob:64
+msgid "Unreadable message:"
+msgstr "メッセージを判読できません:"
+
+#: src/mn-standard-message-view.gob:67
+msgid "From:"
+msgstr "差出人:"
+
+#: src/mn-standard-message-view.gob:68
+msgid "Subject:"
+msgstr "件名:"
+
+#: src/mn-standard-message-view.gob:72
+msgid "Sent:"
+msgstr "発信時期:"
+
+#. translators: header capitalization
+#: src/mn-stock.c:29
+msgid "Select _All"
+msgstr "すべてを選択(_A)"
+
+#. translators: header capitalization
+#. translators: header capitalization
+#: src/mn-stock.c:32
+msgid "Co_nnect"
+msgstr "接続(_N)"
+
+#: src/mn-sylpheed-mailbox-backend.gob:223
+#, c-format
+msgid "unable to open folder: %s"
+msgstr "フォルダのオープンに失敗: %s"
+
+#: src/mn-sylpheed-mailbox-backend.gob:276
+#, c-format
+msgid "unable to close folder: %s"
+msgstr "フォルダのクローズに失敗: %s"
+
+#: src/mn-sylpheed-mailbox-backend.gob:279
+#, c-format
+msgid "error while reading folder: %s"
+msgstr "フォルダの読み出しに失敗: %s"
+
+#: src/mn-sylpheed-mailbox-backend.gob:420
+msgid "unexpected end of file"
+msgstr "予想外のEOF"
+
+#: src/mn-sylpheed-mailbox-backend.gob:438
+#, c-format
+msgid "incompatible file version \"%i\""
+msgstr "ファイルバージョン\"%i\"の互換性がありません"
+
+#: src/mn-sylpheed-mailbox-backend.gob:441
+msgid "file version missing"
+msgstr "ファイルバージョンが欠落"
+
+#: src/mn-system-vfs-mailbox-properties.gob:40
+#: src/mn-system-vfs-mailbox-properties.gob:48
+#: src/mn-system-vfs-mailbox.gob:45
+msgid "System mailbox"
+msgstr "ローカルシステムのメールボックス"
+
+#: src/mn-system-vfs-mailbox-properties.gob:70
+#, c-format
+msgid "Your system mailbox is <span weight=\"bold\">%s</span>."
+msgstr "あなたのメールボックスは<span weight=\"bold\">%s</span>です."
+
+#: src/mn-system-vfs-mailbox-properties.gob:77
+msgid ""
+"The location of your system mailbox could not be detected. Check the MAIL "
+"environment variable."
+msgstr ""
+"ローカルシステムのメールボックスを検出できませんでした. 環境変数MAILの"
+"設定をご確認ください."
+
+#: src/mn-system-vfs-mailbox.gob:72
+msgid "system mailbox not found"
+msgstr "ローカルシステムのメールボックスが見当たりません"
+
+#: src/mn-util.c:349
+#, c-format
+msgid "error loading image: %s"
+msgstr "画像の読み込みに失敗: %s"
+
+#: src/mn-util.c:365
+#, c-format
+msgid ""
+"Unable to load interface \"%s\". Please check your Mail Notification "
+"installation."
+msgstr ""
+"インターフェース\"%s\"の読み込みに失敗. メール着信通知システムが正しく"
+"インストールされているかどうかをご確認ください."
+
+#: src/mn-util.c:380
+#, c-format
+msgid ""
+"Widget \"%s\" not found in interface \"%s\". Please check your Mail "
+"Notification installation."
+msgstr "\"%s\"ウィジェットがインターフェース内で見つかりません. 新着メール"
+"通知システムが正しくインストールされているかどうかをご確認ください."
+
+#: src/mn-util.c:449
+#, c-format
+msgid "Unable to open self as a module (%s)."
+msgstr "自分自身をモジュールとしてオープンできません: %s"
+
+#: src/mn-util.c:454
+#, c-format
+msgid ""
+"Signal handler \"%s\" not found. Please check your Mail Notification "
+"installation."
+msgstr ""
+"シグナルハンドラ\"%s\"が見つかりません. メール着信通知システムが正しく"
+"インストールされているかどうかをご確認ください."
+
+#: src/mn-util.c:605 src/mn-util.c:628 src/mn-util.c:648 src/mn-util.c:670
+msgid "A drag and drop error has occurred"
+msgstr "ドラッグ&ドロップエラーが発生"
+
+#: src/mn-util.c:606
+msgid "An invalid location list has been received."
+msgstr "不正なアドレス (URI) 一覧を取得しました."
+
+#: src/mn-util.c:649
+msgid "An invalid Mozilla location has been received."
+msgstr "Mozilla用のアドレス (URI) 指定が不正."
+
+#: src/mn-util.c:725
+msgid "Unable to display help"
+msgstr "ヘルプを表示できません"
+
+#: src/mn-util.c:739
+#, c-format
+msgid "Unable to create a thread: %s."
+msgstr "スレッドの生成に失敗: %s."
+
+#: src/mn-util.c:899
+#, c-format
+msgid ""
+"The following location is invalid:\n"
+"\n"
+"%s"
+msgstr "以下のアドレスが不正です:"
+"\n"
+"%s"
+
+#: src/mn-util.c:919
+msgid "A fatal error has occurred in Mail Notification"
+msgstr "メール着信通知システムの内部で致命的なエラーが発生"
+
+#: src/mn-util.c:958
+#, c-format
+msgid "unable to get current time: %s"
+msgstr "現在の時刻の取得に失敗: %s"
+
+#: src/mn-util.c:1250
+#, c-format
+msgid "%i second ago"
+msgstr "%i秒前"
+
+#: src/mn-util.c:1254
+#, c-format
+msgid "about %i minute ago"
+msgstr "約%i分前"
+
+#: src/mn-util.c:1259
+#, c-format
+msgid "about %i hour ago"
+msgstr "約%i時間前"
+
+#: src/mn-util.c:1264
+#, c-format
+msgid "about %i day ago"
+msgstr "%i日位前"
+
+#: src/mn-util.c:1269
+#, c-format
+msgid "about %i week ago"
+msgstr "%i週間位前"
+
+#: src/mn-util.c:1282
+msgid "unknown date"
+msgstr "日時不明"
+
+#: src/mn-vfs-mailbox.gob:221
+#, c-format
+msgid "unable to monitor %s (%s), poll mode activated"
+msgstr "%s (%s) の監視ができません. pollモードに切り替えます"
+
+#: src/mn-vfs-mailbox.gob:385
+msgid "unknown mailbox format"
+msgstr "メールボックスの形式が不明"
+
+#: src/mn-vfs-mailbox.gob:385
+msgid "does not exist"
+msgstr "は存在しません"
+
+#: ui/mailbox-properties-dialog.glade.h:1 ui/properties-dialog.glade.h:4
+msgid "<span weight=\"bold\">General</span>"
+msgstr "<span weight=\"bold\">基本設定</span>"
+
+#: ui/mailbox-properties-dialog.glade.h:2
+msgid "Delay between mail chec_ks:"
+msgstr "自動メールチェックの間隔(_K):"
+
+#: ui/mailbox-properties-dialog.glade.h:3
+msgid "Mailbox _name:"
+msgstr "メールボックスの名称(_N):"
+
+#: ui/mailbox-properties-dialog.glade.h:4
+msgid "Use De_fault"
+msgstr "デフォルトに戻す(_F)"
+
+#: ui/mailbox-properties-dialog.glade.h:5
+msgid "_Mailbox type:"
+msgstr "メールボックスの種別(_M):"
+
+#: ui/mailbox-properties-dialog.glade.h:6
+msgid "_Use Default"
+msgstr "デフォルトに戻す(_U)"
+
+#: ui/mailbox-properties-dialog.glade.h:7 ui/properties-dialog.glade.h:35
+msgid "minutes"
+msgstr "分"
+
+#: ui/mailbox-properties-dialog.glade.h:8 ui/properties-dialog.glade.h:39
+msgid "seconds"
+msgstr "秒"
+
+#: ui/properties-dialog.glade.h:1
+msgid "<span weight=\"bold\">Click Action</span>"
+msgstr "<span weight=\"bold\">クリック時の動作</span>"
+
+#: ui/properties-dialog.glade.h:2
+msgid "<span weight=\"bold\">Commands</span>"
+msgstr "<span weight=\"bold\">外部コマンド</span>"
+
+#: ui/properties-dialog.glade.h:3
+msgid "<span weight=\"bold\">Fonts</span>"
+msgstr "<span weight=\"bold\">フォント</span>"
+
+#: ui/properties-dialog.glade.h:5
+msgid "<span weight=\"bold\">Layout</span>"
+msgstr "<span weight=\"bold\">レイアウト</span>"
+
+#: ui/properties-dialog.glade.h:6
+msgid "<span weight=\"bold\">Mailbox List</span>"
+msgstr "<span weight=\"bold\">メールボックス一覧</span>"
+
+#: ui/properties-dialog.glade.h:7
+msgid "<span weight=\"bold\">Position</span>"
+msgstr "<span weight=\"bold\">表示位置</span>"
+
+#: ui/properties-dialog.glade.h:8
+msgid "<span weight=\"bold\">Tooltip Mail Summary</span>"
+msgstr "<span weight=\"bold\">バルーン表示による着信メール一覧</span>"
+
+#: ui/properties-dialog.glade.h:9
+msgid "Co_ntents:"
+msgstr "内容(_N):"
+
+#: ui/properties-dialog.glade.h:10
+msgid "General"
+msgstr "全般"
+
+#: ui/properties-dialog.glade.h:11
+msgid "Hide p_reviously displayed mail"
+msgstr "確認ずみのメールを隠す(_P)"
+
+#: ui/properties-dialog.glade.h:12
+msgid "Hori_zontal offset:"
+msgstr "水平オフセット(_Z):"
+
+#: ui/properties-dialog.glade.h:14
+msgid "Mail Summary Popup"
+msgstr "メール一覧ポップアップ"
+
+#: ui/properties-dialog.glade.h:15
+msgid "Status Icon"
+msgstr "ステータスアイコン"
+
+#: ui/properties-dialog.glade.h:16
+msgid "Use these _fonts:"
+msgstr "フォントを指定(_F):"
+
+#: ui/properties-dialog.glade.h:17
+msgid "When _new mail arrives:"
+msgstr "メール着信時に実行(_N):"
+
+#: ui/properties-dialog.glade.h:18
+msgid "When all mail has _been read:"
+msgstr "全メール開封後に実行(_B):"
+
+#: ui/properties-dialog.glade.h:19
+msgid "_Always display"
+msgstr "常に表示(_A)"
+
+#: ui/properties-dialog.glade.h:20
+msgid "_Automatically close after:"
+msgstr "この時間が経過したら自動的に閉じる(_A):"
+
+#: ui/properties-dialog.glade.h:21
+msgid "_Blink on errors"
+msgstr "エラー発生時に点滅(_B)"
+
+#: ui/properties-dialog.glade.h:22
+msgid "_Display a Test Popup"
+msgstr "ポップアップの動作テスト(_D)"
+
+#: ui/properties-dialog.glade.h:23
+msgid "_Display seen mail"
+msgstr "確認済みメールを表示(_D)"
+
+#: ui/properties-dialog.glade.h:24
+msgid "_Display this dialog"
+msgstr "このダイアログを表示(_D)"
+
+#: ui/properties-dialog.glade.h:25
+msgid "_Enable mail summary popup"
+msgstr "ポップアップによる新着通知を有効に(_E)"
+
+#: ui/properties-dialog.glade.h:26
+msgid "_Launch the mail reader"
+msgstr "メールリーダーを起動(_L)"
+
+#: ui/properties-dialog.glade.h:27
+msgid "_None"
+msgstr "無し(_N)"
+
+#: ui/properties-dialog.glade.h:28
+msgid "_Position:"
+msgstr "位置(_P):"
+
+#: ui/properties-dialog.glade.h:29
+msgid "_Title:"
+msgstr "タイトル(_T):"
+
+#: ui/properties-dialog.glade.h:30
+msgid "_Update the mail status"
+msgstr "着信状況を強制チェック(_U)"
+
+#: ui/properties-dialog.glade.h:31
+msgid "_Use fonts from theme"
+msgstr "デスクトップ環境のテーマと同じフォントを使用(_U)"
+
+#: ui/properties-dialog.glade.h:32
+msgid "_Vertical offset:"
+msgstr "垂直オフセット(_V):"
+
+#: ui/properties-dialog.glade.h:33
+msgid "icon tooltip's mail summary layout|Co_mpact"
+msgstr "コンパクト(_M)"
+
+#: ui/properties-dialog.glade.h:34
+msgid "icon tooltip's mail summary layout|_Standard"
+msgstr "標準(_S)"
+
+#: ui/properties-dialog.glade.h:36
+msgid "pixels"
+msgstr "ピクセル"
+
+#: ui/properties-dialog.glade.h:37
+msgid "popup's mail summary layout|Co_mpact"
+msgstr "コンパクト(_M)"
+
+#: ui/properties-dialog.glade.h:38
+msgid "popup's mail summary layout|_Standard"
+msgstr "標準(_S)"

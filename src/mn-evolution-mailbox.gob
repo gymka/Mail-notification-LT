@@ -1,0 +1,298 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-mailbox.h"
+%}
+
+%privateheader{
+#include <time.h>
+#include "mn-evolution-client.h"
+%}
+
+%{
+#include <stdarg.h>
+#include <gobject/gvaluecollector.h>
+#include <glib/gi18n.h>
+#include "mn-evolution.h"
+#include "mn-mailbox-private.h"
+#include "mn-message.h"
+#include "mn-util.h"
+#include "mn-stock.h"
+#include "mn-evolution-message.h"
+#include "mn-shell.h"
+#include "mn-evolution-client-dbus.h"
+
+typedef struct
+{
+  const char	*uid;
+  unsigned int	sent_time;
+  unsigned int	received_time;
+  const char	*id;
+  const char	*from;
+  const char	*subject;
+} MessageInfo;
+%}
+
+class MN:Evolution:Mailbox from MN:Mailbox
+{
+  public char *uri destroywith g_free;
+  property STRING uri (link, flags = MN_MAILBOX_PARAM_LOAD_SAVE | MN_MAILBOX_PARAM_REQUIRED);
+
+  /*
+   * Evolution might not be running when we instantiate the mailbox,
+   * so we cache the folder name.
+   */
+  public char *folder_name destroywith g_free;
+  property STRING folder_name (link, flags = MN_MAILBOX_PARAM_LOAD_SAVE | MN_MAILBOX_PARAM_REQUIRED);
+
+  private MNEvolutionClient *client;
+  private gboolean signals_connected;
+  private DBusGProxyCall *pending_call;
+
+  private time_t last_browsed;
+
+  class_init (class)
+  {
+    MN_MAILBOX_CLASS(class)->type = "evolution";
+  }
+
+  init (self)
+  {
+    mn_mailbox_set_format(MN_MAILBOX(self), "Evolution");
+    mn_mailbox_set_stock_id(MN_MAILBOX(self), MN_STOCK_EVOLUTION_MAILBOX);
+
+    /* we receive notifications from Evolution, no need to poll */
+    mn_mailbox_set_poll(MN_MAILBOX(self), FALSE);
+  }
+
+  override (MN:Mailbox) void
+    seal (MNMailbox *mailbox)
+  {
+    PARENT_HANDLER(mailbox);
+
+    if (! mailbox->runtime_name)
+      mailbox->runtime_name = g_strdup(SELF(mailbox)->folder_name);
+  }
+
+  finalize (self)
+  {
+    if (selfp->client)
+      {
+	if (selfp->pending_call)
+	  {
+	    g_assert(selfp->client->proxy != NULL);
+	    dbus_g_proxy_cancel_call(selfp->client->proxy, selfp->pending_call);
+	  }
+
+	self_disconnect_proxy_signals(self);
+
+	g_signal_handlers_disconnect_by_func(selfp->client, mn_mailbox_check, self);
+      }
+  }
+
+  private void
+    connect_proxy_signals (self)
+  {
+    g_return_if_fail(selfp->client != NULL);
+    g_return_if_fail(selfp->client->proxy != NULL);
+
+    if (selfp->signals_connected)
+      return;
+
+    dbus_g_proxy_connect_signal(selfp->client->proxy,
+				MN_EVOLUTION_SERVER_SIGNAL_FOLDER_CHANGED,
+				G_CALLBACK(self_folder_changed_h),
+				self,
+				NULL);
+    dbus_g_proxy_connect_signal(selfp->client->proxy,
+				MN_EVOLUTION_SERVER_SIGNAL_MESSAGE_READING,
+				G_CALLBACK(self_message_reading_h),
+				self,
+				NULL);
+
+    selfp->signals_connected = TRUE;
+  }
+
+  private void
+    disconnect_proxy_signals (self)
+  {
+    g_return_if_fail(selfp->client != NULL);
+
+    if (! selfp->signals_connected)
+      return;
+
+    selfp->signals_connected = FALSE;
+
+    if (! selfp->client->proxy)
+      return;
+
+    dbus_g_proxy_disconnect_signal(selfp->client->proxy,
+				   MN_EVOLUTION_SERVER_SIGNAL_FOLDER_CHANGED,
+				   G_CALLBACK(self_folder_changed_h),
+				   self);
+    dbus_g_proxy_disconnect_signal(selfp->client->proxy,
+				   MN_EVOLUTION_SERVER_SIGNAL_MESSAGE_READING,
+				   G_CALLBACK(self_message_reading_h),
+				   self);
+  }
+
+  private void
+    folder_changed_h (DBusGProxy *proxy, const char *uri, gpointer user_data)
+  {
+    Self *self = user_data;
+
+    if (! strcmp(uri, self->uri))
+      {
+	GDK_THREADS_ENTER();
+	mn_mailbox_check(MN_MAILBOX(self));
+	GDK_THREADS_LEAVE();
+      }
+  }
+
+  private void
+    message_reading_h (DBusGProxy *proxy, const char *uri, gpointer user_data)
+  {
+    Self *self = user_data;
+
+    if (! strcmp(uri, self->uri))
+      {
+	selfp->last_browsed = mn_time();
+
+	GDK_THREADS_ENTER();
+	mn_mailbox_check(MN_MAILBOX(self));
+	GDK_THREADS_LEAVE();
+      }
+  }
+
+  private void
+    value_array_get_values (GValueArray *value_array (check null), ...)
+  {
+    va_list args;
+    int i;
+
+    va_start(args, value_array);
+
+    for (i = 0; i < value_array->n_values; i++)
+      {
+	GValue *value = g_value_array_get_nth(value_array, i);
+	char *error = NULL;
+
+	G_VALUE_LCOPY(value, args, G_VALUE_NOCOPY_CONTENTS, &error);
+	g_assert(error == NULL);
+      }
+
+    va_end(args);
+  }
+
+  override (MN:Mailbox) void
+    check (MNMailbox *mailbox)
+  {
+    Self *self = SELF(mailbox);
+
+    PARENT_HANDLER(mailbox);
+
+    mn_mailbox_set_error(mailbox, NULL);
+
+    if (! selfp->client)
+      {
+	selfp->client = mn_evolution_client_get();
+	g_signal_connect_swapped(selfp->client, "notify::proxy", G_CALLBACK(mn_mailbox_check), self);
+      }
+
+    if (! selfp->client->proxy)	/* not connected */
+      {
+	selfp->pending_call = NULL;
+
+	self_disconnect_proxy_signals(self);
+
+	mn_mailbox_set_error(mailbox, _("unable to contact Evolution"));
+
+	return;
+      }
+
+    self_connect_proxy_signals(self);
+
+    if (selfp->pending_call)
+      dbus_g_proxy_cancel_call(selfp->client->proxy, selfp->pending_call);
+
+    selfp->pending_call = org_gnome_MailNotification_Evolution_get_unseen_messages_async(selfp->client->proxy,
+											 self->uri,
+											 self_get_unseen_messages_cb,
+											 self);
+  }
+
+  private void
+    get_unseen_messages_cb (DBusGProxy *proxy,
+			    GPtrArray *messages_array,
+			    GError *err,
+			    gpointer user_data)
+  {
+    Self *self = user_data;
+
+    GDK_THREADS_ENTER();
+
+    if (err)
+      {
+	mn_mailbox_set_error(MN_MAILBOX(self), "%s", err->message);
+	g_error_free(err);
+      }
+    else
+      {
+	int i;
+	GSList *messages = NULL;
+
+	for (i = 0; i < messages_array->len; i++)
+	  {
+	    GValueArray *value_array = g_ptr_array_index(messages_array, i);
+	    MessageInfo info;
+	    MNMessageFlags flags = 0;
+
+	    self_value_array_get_values(value_array,
+					&info.uid,
+					&info.sent_time,
+					&info.received_time,
+					&info.id,
+					&info.from,
+					&info.subject);
+
+	    if (info.received_time > selfp->last_browsed)
+	      flags |= MN_MESSAGE_NEW;
+
+	    messages = g_slist_prepend(messages,
+				       mn_evolution_message_new(MN_MAILBOX(self),
+								info.sent_time,
+								info.id,
+								info.from,
+								info.subject,
+								flags,
+								info.uid));
+	  }
+
+	mn_g_ptr_array_free_deep_custom(messages_array, (GFunc) g_value_array_free, NULL);
+
+	mn_mailbox_set_messages(MN_MAILBOX(self), messages);
+	mn_g_object_slist_free(messages);
+      }
+
+    selfp->pending_call = NULL;
+
+    GDK_THREADS_LEAVE();
+  }
+}

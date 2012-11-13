@@ -1,0 +1,120 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-message.h"
+%}
+
+%{
+#include <glib/gi18n.h>
+#include <camel/camel-folder-summary.h>
+#include "mn-evolution-mailbox.h"
+#include "mn-message-private.h"
+#include "mn-evolution-client.h"
+#include "mn-evolution-client-dbus.h"
+#include "mn-util.h"
+
+#define CLIENT_METHOD(invocation)					\
+  {									\
+    MNEvolutionMailbox *mailbox = MN_EVOLUTION_MAILBOX(message->mailbox); \
+    MNEvolutionClient *client;						\
+    GError *tmp_err = NULL;						\
+    GError *err = NULL;							\
+									\
+    client = mn_evolution_client_get();					\
+									\
+    if (! client->proxy)						\
+      {									\
+	g_set_error(&err, 0, 0, _("Unable to contact Evolution."));	\
+	goto end;							\
+      }									\
+									\
+    if (! invocation)							\
+      {									\
+	g_set_error(&err, 0, 0, _("An Evolution error has occurred: %s."), tmp_err->message); \
+	g_error_free(tmp_err);						\
+      }									\
+									\
+  end:									\
+    mn_message_action_done(request, err);				\
+  }
+%}
+
+class MN:Evolution:Message from MN:Message
+{
+  private char *uid destroywith g_free;
+  property STRING uid (link, flags = CONSTRUCT_ONLY | MN_MESSAGE_PARAM_EXPORT);
+
+  public MNMessage *
+    new (MNMailbox *mailbox,
+	 time_t sent_time,
+	 const char *id,
+	 const char *from,
+	 const char *subject,
+	 MNMessageFlags flags,
+	 const char *uid (check null))
+  {
+    return MN_MESSAGE(GET_NEW_VARG(MN_MESSAGE_PROP_MAILBOX(mailbox),
+				   MN_MESSAGE_PROP_SENT_TIME(sent_time),
+				   MN_MESSAGE_PROP_ID((char *) id),
+				   MN_MESSAGE_PROP_FROM((char *) from),
+				   MN_MESSAGE_PROP_SUBJECT((char *) subject),
+				   MN_MESSAGE_PROP_FLAGS(flags),
+				   MN_EVOLUTION_MESSAGE_PROP_UID((char *) uid),
+				   NULL));
+  }
+
+  override (MN:Message) gboolean
+    builtin_can_open (MNMessage *message)
+  {
+    return TRUE;
+  }
+
+  override (MN:Message) void
+    builtin_open (MNMessage *message, MNMessageActionRequest *request)
+  {
+    Self *self = SELF(message);
+    CLIENT_METHOD(org_gnome_MailNotification_Evolution_open_message(client->proxy, mailbox->uri, selfp->uid, &tmp_err));
+  }
+
+  private void
+    set_flags (self, guint32 flags, MNMessageActionRequest *request)
+  {
+    MNMessage *message = MN_MESSAGE(self);
+    CLIENT_METHOD(org_gnome_MailNotification_Evolution_set_message_flags(client->proxy, mailbox->uri, selfp->uid, flags, &tmp_err));
+  }
+
+  override (MN:Message) void
+    builtin_mark_as_read (MNMessage *message, MNMessageActionRequest *request)
+  {
+    self_set_flags(SELF(message), CAMEL_MESSAGE_SEEN, request);
+  }
+
+  override (MN:Message) void
+    builtin_mark_as_spam (MNMessage *message, MNMessageActionRequest *request)
+  {
+    self_set_flags(SELF(message), CAMEL_MESSAGE_SEEN | CAMEL_MESSAGE_JUNK | CAMEL_MESSAGE_JUNK_LEARN, request);
+  }
+
+  override (MN:Message) void
+    builtin_delete (MNMessage *message, MNMessageActionRequest *request)
+  {
+    self_set_flags(SELF(message), CAMEL_MESSAGE_SEEN | CAMEL_MESSAGE_DELETED, request);
+  }
+}

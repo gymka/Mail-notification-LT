@@ -1,0 +1,723 @@
+/*
+ * Mail Notification
+ * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+%headertop{
+#include "mn-dialog.h"
+#include "mn-mailbox.h"
+%}
+
+%privateheader{
+#include "mn-mailbox-properties.h"
+%}
+
+%{
+#include <glib/gi18n.h>
+#include "mn-autodetect-mailbox-properties.h"
+#if WITH_MBOX || WITH_MOZILLA || WITH_MH || WITH_MAILDIR || WITH_SYLPHEED
+#include "mn-system-vfs-mailbox-properties.h"
+#endif
+#if WITH_POP3
+#include "mn-pop3-mailbox-properties.h"
+#endif
+#if WITH_IMAP
+#include "mn-imap-mailbox-properties.h"
+#endif
+#if WITH_GMAIL
+#include "mn-gmail-mailbox-properties.h"
+#endif
+#if WITH_YAHOO
+#include "mn-yahoo-mailbox-properties.h"
+#endif
+#if WITH_HOTMAIL
+#include "mn-hotmail-mailbox-properties.h"
+#endif
+#if WITH_EVOLUTION
+#include "mn-evolution-mailbox-properties.h"
+#endif
+#include "mn-util.h"
+#include "mn-mailboxes.h"
+#include "mn-shell.h"
+#include "mn-non-linear-range.h"
+
+#define HELP_SECTION "mn-mailbox-properties-help-section"
+
+enum {
+  COLUMN_PROPERTIES,
+  COLUMN_STOCK_ID,
+  COLUMN_LABEL,
+  N_COLUMNS
+};
+
+static GType selected_type = 0;
+
+static const MNNonLinearRangeBlock delay_blocks[] = {
+  { MN_SECS(10),	MN_SECS(60),	MN_SECS(10)	},
+  { MN_MINS(2),		MN_MINS(10),	MN_MINS(1)	},
+  { MN_MINS(15),	MN_MINS(60),	MN_MINS(5)	},
+  { MN_HOURS(2),	MN_HOURS(24),	MN_HOURS(1)	}
+};
+%}
+
+class MN:Mailbox:Properties:Dialog from MN:Dialog
+{
+  /* "parent" is a GtkWidget property, do not conflict with it */
+  private GtkWindow *dialog_parent;
+  property POINTER dialog_parent (link, flags = CONSTRUCT_ONLY, type = GtkWindow *);
+
+  private MNMailbox *mailbox unrefwith g_object_unref;
+  property OBJECT mailbox (flags = CONSTRUCT,
+			   object_type = MN:Mailbox,
+			   type = MNMailbox *,
+			   export)
+    set
+    {
+      GObject *obj;
+
+      if (selfp->mailbox)
+	{
+	  g_object_unref(selfp->mailbox);
+	  selfp->mailbox = NULL;
+	}
+
+      obj = g_value_dup_object(VAL);
+      if (obj)
+	{
+	  char *title;
+
+	  selfp->mailbox = MN_MAILBOX(obj);
+
+	  /* translators: header capitalization */
+	  title = g_strdup_printf(_("%s Properties"), selfp->mailbox->runtime_name);
+	  gtk_window_set_title(GTK_WINDOW(self), title);
+	  g_free(title);
+	}
+    }
+    get
+    {
+      g_value_set_object(VAL, selfp->mailbox);
+    };
+
+  private gboolean apply_used;
+
+  /* only set in editing mode */
+  private MNMailboxConfiguration *orig_mailbox_configuration destroywith mn_mailbox_configuration_free;
+
+  protected GtkWidget *notebook;
+  protected GtkWidget *general_vbox;
+  private GtkWidget *type_label;
+  private GtkWidget *type_combo;
+  private GtkWidget *name_default_radio;
+  private GtkWidget *name_default_label;
+  private GtkWidget *name_other_radio;
+  private GtkWidget *name_entry;
+  private GtkWidget *delay_vbox;
+  private GtkWidget *delay_default_radio;
+  private GtkWidget *delay_default_label;
+  private GtkWidget *delay_other_radio;
+  private GtkWidget *delay_scale;
+
+  private GtkWidget *apply_button;
+  private GtkWidget *accept_button;
+
+  private GtkListStore *store unrefwith g_object_unref;
+
+  private MNMailboxProperties *active_properties unrefwith g_object_unref;
+
+  private GtkSizeGroup *details_size_group = {gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL)} unrefwith g_object_unref;
+
+  constructor (self)
+  {
+    GtkWidget *page;
+    MNMailboxProperties *properties;
+
+    mn_container_create_interface(GTK_CONTAINER(self),
+				  PKGDATADIR G_DIR_SEPARATOR_S "mailbox-properties-dialog.glade",
+				  "notebook",
+				  "mn_mailbox_properties_dialog_",
+				  "notebook", &self->notebook,
+				  "general_vbox", &self->general_vbox,
+				  "type_label", &selfp->type_label,
+				  "type_combo", &selfp->type_combo,
+				  "name_default_radio", &selfp->name_default_radio,
+				  "name_default_label", &selfp->name_default_label,
+				  "name_other_radio", &selfp->name_other_radio,
+				  "name_entry", &selfp->name_entry,
+				  "delay_vbox", &selfp->delay_vbox,
+				  "delay_default_radio", &selfp->delay_default_radio,
+				  "delay_default_label", &selfp->delay_default_label,
+				  "delay_other_radio", &selfp->delay_other_radio,
+				  "delay_scale", &selfp->delay_scale,
+				  NULL);
+
+    gtk_window_set_resizable(GTK_WINDOW(self), FALSE);
+
+    if (selfp->dialog_parent)
+      gtk_window_set_transient_for(GTK_WINDOW(self), selfp->dialog_parent);
+
+    page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(self->notebook), 0);
+    self_set_help_section(page, "mailbox-properties-general");
+
+    page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(self->notebook), 1);
+    self_set_help_section(page, "mailbox-properties-details");
+
+    self_setup_type_combo(self);
+
+    mn_non_linear_range_setup_static(GTK_RANGE(selfp->delay_scale), delay_blocks, G_N_ELEMENTS(delay_blocks));
+
+    /* set a good general default value */
+    mn_non_linear_range_set_value(GTK_RANGE(selfp->delay_scale), MN_MINS(5));
+
+    gtk_size_group_add_widget(selfp->details_size_group, selfp->name_default_radio);
+    gtk_size_group_add_widget(selfp->details_size_group, selfp->name_other_radio);
+
+    /* setup the dialog depending on the mode (edit or add) */
+    gtk_dialog_add_button(GTK_DIALOG(self), GTK_STOCK_HELP, GTK_RESPONSE_HELP);
+    if (selfp->mailbox)
+      {
+	selfp->apply_button = gtk_dialog_add_button(GTK_DIALOG(self), GTK_STOCK_APPLY, GTK_RESPONSE_APPLY);
+	gtk_dialog_add_button(GTK_DIALOG(self), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL);
+	selfp->accept_button = gtk_dialog_add_button(GTK_DIALOG(self), GTK_STOCK_OK, GTK_RESPONSE_OK);
+
+	properties = self_get_properties_by_type(self, MN_MAILBOX_GET_CLASS(selfp->mailbox)->type);
+      }
+    else
+      {
+	gtk_dialog_add_button(GTK_DIALOG(self), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL);
+	selfp->accept_button = gtk_dialog_add_button(GTK_DIALOG(self), GTK_STOCK_ADD, GTK_RESPONSE_ACCEPT);
+
+	if (! selected_type)
+	  selected_type = MN_TYPE_AUTODETECT_MAILBOX_PROPERTIES;
+
+	properties = self_get_properties_by_g_type(self, selected_type);
+
+	/* translators: header capitalization */
+	gtk_window_set_title(GTK_WINDOW(self), _("Add a Mailbox"));
+      }
+
+    self_set_active_properties(self, properties);
+
+    if (selfp->mailbox)
+      {
+	selfp->orig_mailbox_configuration = mn_mailbox_get_configuration(selfp->mailbox);
+
+	mn_mailbox_properties_set_mailbox(properties, selfp->mailbox);
+
+	if (selfp->mailbox->name)
+	  {
+	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(selfp->name_other_radio), TRUE);
+	    gtk_entry_set_text(GTK_ENTRY(selfp->name_entry), selfp->mailbox->name);
+	  }
+
+	if (selfp->mailbox->check_delay != -1)
+	  {
+	    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(selfp->delay_other_radio), TRUE);
+	    mn_non_linear_range_set_value(GTK_RANGE(selfp->delay_scale), selfp->mailbox->check_delay);
+	  }
+      }
+
+    g_object_unref(properties);
+
+    gtk_widget_grab_default(selfp->accept_button);
+
+    /*
+     * HIG chapter 3:
+     * "When opening a dialog, provide initial keyboard focus to the
+     * component that you expect users to operate first. This focus is
+     * especially important for users who must use a keyboard to
+     * navigate your application."
+     */
+    gtk_widget_grab_focus(selfp->type_combo);
+
+    self_update_name_sensitivity(self);
+    self_update_delay_sensitivity(self);
+
+    g_signal_connect(self, "response", G_CALLBACK(self_response_h), NULL);
+  }
+
+  private void
+    setup_type_combo (self)
+  {
+    GtkCellRenderer *renderer;
+
+    selfp->store = gtk_list_store_new(N_COLUMNS,
+				      MN_TYPE_MAILBOX_PROPERTIES,
+				      G_TYPE_STRING,
+				      G_TYPE_STRING);
+
+    self_add_type(self, MN_TYPE_AUTODETECT_MAILBOX_PROPERTIES);
+#if WITH_MBOX || WITH_MOZILLA || WITH_MH || WITH_MAILDIR || WITH_SYLPHEED
+    self_add_type(self, MN_TYPE_SYSTEM_VFS_MAILBOX_PROPERTIES);
+#endif
+#if WITH_POP3
+    self_add_type(self, MN_TYPE_POP3_MAILBOX_PROPERTIES);
+#endif
+#if WITH_IMAP
+    self_add_type(self, MN_TYPE_IMAP_MAILBOX_PROPERTIES);
+#endif
+#if WITH_GMAIL
+    self_add_type(self, MN_TYPE_GMAIL_MAILBOX_PROPERTIES);
+#endif
+#if WITH_YAHOO
+    self_add_type(self, MN_TYPE_YAHOO_MAILBOX_PROPERTIES);
+#endif
+#if WITH_HOTMAIL
+    self_add_type(self, MN_TYPE_HOTMAIL_MAILBOX_PROPERTIES);
+#endif
+#if WITH_EVOLUTION
+    self_add_type(self, MN_TYPE_EVOLUTION_MAILBOX_PROPERTIES);
+#endif
+
+    gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(selfp->store), COLUMN_LABEL, GTK_SORT_ASCENDING);
+
+    renderer = gtk_cell_renderer_pixbuf_new();
+    g_object_set(renderer, "stock-size", GTK_ICON_SIZE_MENU, NULL);
+    gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(selfp->type_combo), renderer, FALSE);
+    gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(selfp->type_combo), renderer,
+				   "stock-id", COLUMN_STOCK_ID,
+				   NULL);
+
+    renderer = gtk_cell_renderer_text_new();
+    g_object_set(renderer, "xpad", 6, NULL);
+    gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(selfp->type_combo), renderer, TRUE);
+    gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(selfp->type_combo), renderer,
+				   "text", COLUMN_LABEL,
+				   NULL);
+
+    gtk_combo_box_set_model(GTK_COMBO_BOX(selfp->type_combo), GTK_TREE_MODEL(selfp->store));
+  }
+
+  private void
+    response_h (GtkDialog *dialog, int response, gpointer user_data)
+  {
+    Self *self = SELF(dialog);
+
+    if (response == GTK_RESPONSE_HELP)
+      {
+	int page_number;
+	GtkWidget *page;
+	const char *section;
+
+	page_number = gtk_notebook_get_current_page(GTK_NOTEBOOK(self->notebook));
+
+	page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(self->notebook), page_number);
+	g_assert(page != NULL);
+
+	section = g_object_get_data(G_OBJECT(page), HELP_SECTION);
+	g_assert(section != NULL);
+
+	mn_show_help(GTK_WINDOW(self), section);
+      }
+
+    /* other responses are handled by the client */
+  }
+
+  private void
+    add_type (self, GType type (check != 0))
+  {
+    MNMailboxProperties *properties;
+    MNMailboxPropertiesClass *p_class;
+    GtkTreeIter iter;
+    GSList *l;
+
+    properties = g_object_new(type, MN_MAILBOX_PROPERTIES_PROP_DIALOG(GTK_WIDGET(self)), NULL);
+
+    p_class = MN_MAILBOX_PROPERTIES_GET_CLASS(properties);
+
+    gtk_list_store_append(selfp->store, &iter);
+    gtk_list_store_set(selfp->store, &iter,
+		       COLUMN_PROPERTIES, properties,
+		       COLUMN_STOCK_ID, p_class->stock_id,
+		       COLUMN_LABEL, p_class->combo_label,
+		       -1);
+
+    g_object_connect(properties,
+		     "swapped-signal::notify::complete", self_update_complete, self,
+		     "swapped-signal::notify::default-name", self_update_default_name, self,
+		     "swapped-signal::notify::default-check-delay", self_update_default_check_delay, self,
+		     NULL);
+
+    MN_LIST_FOREACH(l, properties->entries)
+      g_signal_connect_swapped(l->data, "activate", G_CALLBACK(self_entry_activate_h), self);
+
+    g_object_unref(properties);	/* now it belongs to the store */
+  }
+
+  private void
+    set_active_properties (self,
+			   MN:Mailbox:Properties *properties (check null type))
+  {
+    gboolean valid;
+    GtkTreeIter iter;
+
+    MN_TREE_MODEL_FOREACH(valid, &iter, GTK_TREE_MODEL(selfp->store))
+      {
+	MNMailboxProperties *these_properties;
+
+	gtk_tree_model_get(GTK_TREE_MODEL(selfp->store), &iter, COLUMN_PROPERTIES, &these_properties, -1);
+	g_object_unref(these_properties);
+
+	if (these_properties == properties)
+	  {
+	    gtk_combo_box_set_active_iter(GTK_COMBO_BOX(selfp->type_combo), &iter);
+	    break;
+	  }
+      }
+  }
+
+  private MNMailboxProperties *
+    get_active_properties (self)
+  {
+    GtkTreeIter iter;
+    MNMailboxProperties *properties = NULL;
+
+    if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(selfp->type_combo), &iter))
+      gtk_tree_model_get(GTK_TREE_MODEL(selfp->store), &iter, COLUMN_PROPERTIES, &properties, -1);
+
+    return properties;
+  }
+
+  private MNMailboxProperties *
+    get_properties_by_type (self, const char *type (check null))
+  {
+    gboolean valid;
+    GtkTreeIter iter;
+
+    MN_TREE_MODEL_FOREACH(valid, &iter, GTK_TREE_MODEL(selfp->store))
+      {
+	MNMailboxProperties *properties;
+	MNMailboxPropertiesClass *class;
+
+	gtk_tree_model_get(GTK_TREE_MODEL(selfp->store), &iter, COLUMN_PROPERTIES, &properties, -1);
+
+	class = MN_MAILBOX_PROPERTIES_GET_CLASS(properties);
+
+	if (class->type && ! strcmp(class->type, type))
+	  return properties;
+
+	g_object_unref(properties);
+      }
+
+    return NULL;
+  }
+
+  private MNMailboxProperties *
+    get_properties_by_g_type (self, GType type (check != 0))
+  {
+    gboolean valid;
+    GtkTreeIter iter;
+
+    MN_TREE_MODEL_FOREACH(valid, &iter, GTK_TREE_MODEL(selfp->store))
+      {
+	MNMailboxProperties *properties;
+
+	gtk_tree_model_get(GTK_TREE_MODEL(selfp->store), &iter, COLUMN_PROPERTIES, &properties, -1);
+
+	if (G_TYPE_CHECK_INSTANCE_TYPE(properties, type))
+	  return properties;
+
+	g_object_unref(properties);
+      }
+
+    return NULL;
+  }
+
+  public MNMailbox *
+    get_current_mailbox (self)
+  {
+    MNMailboxProperties *properties;
+    MNMailbox *mailbox;
+
+    properties = self_get_active_properties(self);
+    mailbox = mn_mailbox_properties_get_mailbox(properties);
+    g_object_unref(properties);
+
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(selfp->name_other_radio)))
+      g_object_set(G_OBJECT(mailbox), MN_MAILBOX_PROP_NAME((char *) gtk_entry_get_text(GTK_ENTRY(selfp->name_entry))), NULL);
+
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(selfp->delay_other_radio)))
+      g_object_set(G_OBJECT(mailbox), MN_MAILBOX_PROP_CHECK_DELAY(mn_non_linear_range_get_value(GTK_RANGE(selfp->delay_scale))), NULL);
+
+    return mailbox;
+  }
+
+  public void
+    apply (self)
+  {
+    MNMailbox *new_mailbox;
+
+    selfp->apply_used = TRUE;
+
+    new_mailbox = self_get_current_mailbox(self);
+    g_assert(MN_IS_MAILBOX(new_mailbox));
+
+    mn_mailbox_seal(new_mailbox);
+
+    mn_mailboxes_queue_remove(mn_shell->mailboxes, selfp->mailbox);
+    mn_mailboxes_queue_add(mn_shell->mailboxes, new_mailbox);
+
+    self_set_mailbox(self, new_mailbox);
+    g_object_unref(new_mailbox);
+  }
+
+  public void
+    cancel (self)
+  {
+    MNMailbox *orig_mailbox;
+
+    if (! selfp->apply_used)
+      return;
+
+    orig_mailbox = mn_mailbox_new_from_configuration(selfp->orig_mailbox_configuration);
+
+    mn_mailbox_seal(orig_mailbox);
+
+    mn_mailboxes_queue_remove(mn_shell->mailboxes, selfp->mailbox);
+    mn_mailboxes_queue_add(mn_shell->mailboxes, orig_mailbox);
+
+    g_object_unref(orig_mailbox);
+  }
+
+  private void
+    update_complete (self)
+  {
+    MNMailboxProperties *properties;
+
+    properties = self_get_active_properties(self);
+    if (properties)
+      {
+	gboolean complete;
+
+	g_object_get(G_OBJECT(properties), MN_MAILBOX_PROPERTIES_GET_PROP_COMPLETE(&complete), NULL);
+	g_object_unref(properties);
+
+	if (selfp->apply_button)
+	  gtk_widget_set_sensitive(selfp->apply_button, complete);
+	gtk_widget_set_sensitive(selfp->accept_button, complete);
+      }
+  }
+
+  private void
+    update_name_sensitivity (self)
+  {
+    gtk_widget_set_sensitive(selfp->name_entry, gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(selfp->name_other_radio)));
+  }
+
+  private void
+    update_delay_sensitivity (self)
+  {
+    gtk_widget_set_sensitive(selfp->delay_scale, gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(selfp->delay_other_radio)));
+  }
+
+  private void
+    update_delay_visibility (self)
+  {
+    MNMailboxProperties *properties;
+    gboolean visible = TRUE;
+
+    properties = self_get_active_properties(self);
+    if (properties)
+      {
+	visible = MN_MAILBOX_PROPERTIES_GET_CLASS(properties)->enable_check_delay;
+	g_object_unref(properties);
+      }
+
+    if (visible)
+      {
+	if (! g_slist_find(gtk_size_group_get_widgets(selfp->details_size_group), selfp->delay_default_radio))
+	  gtk_size_group_add_widget(selfp->details_size_group, selfp->delay_default_radio);
+	if (! g_slist_find(gtk_size_group_get_widgets(selfp->details_size_group), selfp->delay_other_radio))
+	  gtk_size_group_add_widget(selfp->details_size_group, selfp->delay_other_radio);
+
+	gtk_widget_show(selfp->delay_vbox);
+      }
+    else
+      {
+	if (g_slist_find(gtk_size_group_get_widgets(selfp->details_size_group), selfp->delay_default_radio))
+	  gtk_size_group_remove_widget(selfp->details_size_group, selfp->delay_default_radio);
+	if (g_slist_find(gtk_size_group_get_widgets(selfp->details_size_group), selfp->delay_other_radio))
+	  gtk_size_group_remove_widget(selfp->details_size_group, selfp->delay_other_radio);
+
+	gtk_widget_hide(selfp->delay_vbox);
+      }
+  }
+
+  private void
+    update_default_name (self)
+  {
+    MNMailboxProperties *properties;
+    char *name = NULL;
+    const char *radio_label;
+
+    properties = self_get_active_properties(self);
+    if (properties)
+      {
+	gboolean complete;
+
+	g_object_get(G_OBJECT(properties),
+		     MN_MAILBOX_PROPERTIES_GET_PROP_COMPLETE(&complete),
+		     NULL);
+
+	if (complete)
+	  g_object_get(G_OBJECT(properties),
+		       MN_MAILBOX_PROPERTIES_GET_PROP_DEFAULT_NAME(&name),
+		       NULL);
+
+	g_object_unref(properties);
+      }
+
+    if (name)
+      radio_label = _("_Default:");
+    else
+      radio_label = _("_Default");
+
+    gtk_button_set_label(GTK_BUTTON(selfp->name_default_radio), radio_label);
+    gtk_label_set_text(GTK_LABEL(selfp->name_default_label), name);
+
+    g_free(name);
+  }
+
+  private void
+    update_default_check_delay (self)
+  {
+    MNMailboxProperties *properties;
+    int delay = -1;
+    const char *radio_label;
+    char *delay_str = NULL;
+
+    properties = self_get_active_properties(self);
+    if (properties)
+      {
+	g_object_get(G_OBJECT(properties),
+		     MN_MAILBOX_PROPERTIES_GET_PROP_DEFAULT_CHECK_DELAY(&delay),
+		     NULL);
+	g_object_unref(properties);
+      }
+
+    if (delay != -1)
+      {
+	radio_label = _("D_efault:");
+	delay_str = mn_format_seconds(delay);
+      }
+    else
+      radio_label = _("D_efault");
+
+    gtk_button_set_label(GTK_BUTTON(selfp->delay_default_radio), radio_label);
+    gtk_label_set_text(GTK_LABEL(selfp->delay_default_label), delay_str);
+
+    g_free(delay_str);
+  }
+
+  protected void
+    set_help_section (Gtk:Widget *page (check null type),
+		      const char *section (check null))
+  {
+    g_object_set_data_full(G_OBJECT(page), HELP_SECTION, g_strdup(section), g_free);
+  }
+
+  public GtkWidget *
+    new (GtkWindow *parent, MNMailbox *mailbox)
+  {
+    return GTK_WIDGET(GET_NEW_VARG(MN_MAILBOX_PROPERTIES_DIALOG_PROP_DIALOG_PARENT(parent),
+				   MN_MAILBOX_PROPERTIES_DIALOG_PROP_MAILBOX(mailbox),
+				   NULL));
+  }
+
+  /* libglade callbacks */
+
+  protected void
+    type_changed_h (self, GtkComboBox *combobox)
+  {
+    if (selfp->active_properties)
+      {
+	mn_mailbox_properties_deactivate(selfp->active_properties);
+	gtk_size_group_remove_widget(selfp->active_properties->label_size_group, selfp->type_label);
+	g_object_unref(selfp->active_properties);
+      }
+
+    selfp->active_properties = self_get_active_properties(self);
+    mn_mailbox_properties_activate(selfp->active_properties);
+    gtk_size_group_add_widget(selfp->active_properties->label_size_group, selfp->type_label);
+
+    if (! selfp->mailbox)	/* mode is add */
+      selected_type = G_OBJECT_TYPE(selfp->active_properties);
+
+    self_update_complete(self);
+    self_update_delay_visibility(self);
+    self_update_default_name(self);
+    self_update_default_check_delay(self);
+  }
+
+  protected void
+    name_toggled_h (self, GtkToggleButton *button)
+  {
+    self_update_name_sensitivity(self);
+  }
+
+  protected void
+    delay_toggled_h (self, GtkToggleButton *button)
+  {
+    self_update_delay_sensitivity(self);
+  }
+
+  protected char *
+    delay_format_value_h (self, double arg, GtkScale *scale)
+  {
+    return mn_format_seconds(mn_non_linear_range_get_value(GTK_RANGE(scale)));
+  }
+
+  protected void
+    entry_activate_h (self, GtkEntry *entry)
+  {
+    if (GTK_WIDGET_IS_SENSITIVE(GTK_WINDOW(self)->default_widget))
+      gtk_window_activate_default(GTK_WINDOW(self));
+    else
+      {
+	MNMailboxProperties *properties;
+	GtkWidget *next = NULL;
+	GSList *elem;
+
+	properties = self_get_active_properties(self);
+	g_assert(properties != NULL);
+
+	elem = g_slist_find(properties->entries, entry);
+	g_assert(elem != NULL);
+
+	do
+	  {
+	    elem = elem->next;
+	    if (! elem)
+	      elem = properties->entries;
+
+	    if (elem->data == entry)
+	      break;
+
+	    if (GTK_WIDGET_MAPPED(elem->data)
+		&& GTK_WIDGET_VISIBLE(elem->data)
+		&& GTK_WIDGET_SENSITIVE(elem->data))
+	      next = elem->data;
+	  }
+	while (! next);
+
+	if (next)
+	  gtk_widget_grab_focus(next);
+
+	g_object_unref(properties);
+      }
+  }
+}
